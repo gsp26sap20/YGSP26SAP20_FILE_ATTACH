@@ -1,0 +1,6 @@
+@EndUserText.label: 'Attachment - Service Definition'
+define service ZUI_ATTACH_SRV {
+  expose Z_C_ATTACH as Attachments;
+  expose Z_C_ATTACH_VER as AttachmentVersions;
+  expose Z_C_ATT_AUDIT as Audit;
+}

@@ -1,0 +1,36 @@
+projection;
+strict ( 2 );
+
+define behavior for Z_C_ATTACH //alias <alias_name>
+{
+  use create;
+  use update;
+  use delete;
+
+  use association _Versions { create; }
+  use association _Audit;
+  use association _Links;
+  use action download_version;
+//  use action view_version;
+//  use action rollback_version;
+  use action deactivate;
+  use action reactivate;
+//  use action upload_new_version;
+//  use action upload_att_ver;
+  use action link_to_bo;
+
+
+}
+define behavior for Z_C_ATTACH_VER
+{
+  use create;
+  use update;
+  use delete;
+
+  use association _Attachment;
+}
+
+define behavior for Z_C_ATT_AUDIT
+{
+  use association _Attachment;
+}

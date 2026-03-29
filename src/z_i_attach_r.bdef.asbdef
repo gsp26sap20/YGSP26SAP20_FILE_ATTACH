@@ -1,0 +1,71 @@
+unmanaged implementation in class zbp_i_attach_r unique;
+strict ( 2 );
+
+define behavior for Z_I_ATTACH_R alias Attach
+lock master
+authorization master ( global, instance )
+{
+  create ( features : global );
+  update ( features : instance );
+  delete ( features : instance );
+
+  association _Versions { create ( features : instance ); }
+  association _Audit;
+  association _CurrentVersion;
+  association _Links;
+
+
+  action ( features : instance ) download_version
+    parameter ZATT_DOWNLOAD_PARAM
+    result [1] Z_I_ATTACH_DOWNLOAD;
+
+  //  action ( features : instance ) view_version result [1] $self;
+  //
+  //  action ( features : instance ) rollback_version
+  //    parameter ZATT_ROLLBACK_PARAM
+  //    result [1] $self;
+
+  action ( features : instance ) deactivate
+    result [1] $self;
+
+  action ( features : instance ) reactivate
+    result [1] $self;
+
+
+  //  action ( features : instance ) upload_new_version
+  //    parameter ZATT_UPLOAD_PARAM
+  //    result [1] $self;
+
+  //  action ( features : instance ) link_to_bo
+  //    parameter ZATT_LINK_PARAM
+  //    result [1] $self;
+  action ( features : instance ) link_to_bo
+    parameter Z_A_LINK_BO_P
+    result [1] $self;
+
+  //  action ( features : instance ) upload_att_ver
+  //    parameter ZATT_UPLOAD_PARAM
+  //    result [1] $self;
+
+}
+
+define behavior for Z_I_ATTACH_VER alias Versions
+lock dependent by _Attachment
+authorization dependent by _Attachment
+{
+  create;
+  update;
+  delete;
+
+  field ( readonly ) FileId;
+  association _Attachment;
+
+}
+
+define behavior for Z_I_ATT_AUDIT alias Audit
+lock dependent by _Attachment
+authorization dependent by _Attachment
+{
+  field ( readonly ) FileId, Erdat, Erzet, Uname, Action, Note, Ernam;
+  association _Attachment;
+}

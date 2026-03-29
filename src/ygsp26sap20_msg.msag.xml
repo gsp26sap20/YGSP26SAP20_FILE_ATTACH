@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_MSAG" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <T100A>
+    <ARBGB>YGSP26SAP20_MSG</ARBGB>
+    <MASTERLANG>E</MASTERLANG>
+    <STEXT>Message class for YGSP26SAP20_FILE_ATTACH</STEXT>
+   </T100A>
+   <T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>001</MSGNR>
+     <TEXT>The file size has exceeded the 10MB limit.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>002</MSGNR>
+     <TEXT>Attachment is inactive.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>003</MSGNR>
+     <TEXT>Current version must not be empty.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>004</MSGNR>
+     <TEXT>Current version must be numeric format (NUMC3).</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>005</MSGNR>
+     <TEXT>Rollback target version must not be empty.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>006</MSGNR>
+     <TEXT>Rollback target must be exactly 3 digits.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>007</MSGNR>
+     <TEXT>Rollback target must contain only digits.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>008</MSGNR>
+     <TEXT>Rollback target must be greater than 000.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>009</MSGNR>
+     <TEXT>Attachment already inactive.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>010</MSGNR>
+     <TEXT>Cannot delete current active version.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>011</MSGNR>
+     <TEXT>FILE_CONTENT must not be empty.</TEXT>
+    </T100>
+   </T100>
+  </asx:values>
+ </asx:abap>
+</abapGit>

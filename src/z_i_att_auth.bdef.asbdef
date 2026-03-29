@@ -1,0 +1,15 @@
+unmanaged implementation in class zbp_i_att_auth unique;
+strict ( 2 );
+
+define behavior for Z_I_ATT_AUTH alias Auth
+//late numbering
+lock master
+authorization master ( instance )
+//etag master <field_name>
+{
+  create;
+  update;
+  delete;
+
+  field ( readonly ) Erdat, Ernam;
+}
