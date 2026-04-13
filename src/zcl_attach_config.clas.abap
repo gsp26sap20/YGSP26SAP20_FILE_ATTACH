@@ -124,16 +124,16 @@ CLASS zcl_attach_config DEFINITION
       WITH UNIQUE KEY file_ext mime_type.
 
     CLASS-METHODS normalize_extension
-      IMPORTING iv_extension TYPE string
+      IMPORTING iv_extension        TYPE string
       RETURNING VALUE(rv_extension) TYPE string.
 
     CLASS-METHODS normalize_mime_type
-      IMPORTING iv_mime_type TYPE string
+      IMPORTING iv_mime_type        TYPE string
       RETURNING VALUE(rv_mime_type) TYPE string.
 
     CLASS-METHODS get_by_ext_and_mime
-      IMPORTING iv_extension TYPE string
-                iv_mime_type TYPE string
+      IMPORTING iv_extension  TYPE string
+                iv_mime_type  TYPE string
       RETURNING VALUE(rs_cfg) TYPE ts_file_cfg
       RAISING   zcx_attach_validation.
 
@@ -142,10 +142,19 @@ CLASS zcl_attach_config DEFINITION
       RETURNING VALUE(rv_ok) TYPE abap_bool.
 
     CLASS-METHODS get_max_bytes
-      IMPORTING iv_extension TYPE string
-                iv_mime_type TYPE string
+      IMPORTING iv_extension        TYPE string
+                iv_mime_type        TYPE string
       RETURNING VALUE(rv_max_bytes) TYPE i
       RAISING   zcx_attach_validation.
+
+    CONSTANTS:
+      c_audit_create              TYPE zsap20_att_audit-action VALUE 'CREATE',
+      c_audit_update_title        TYPE zsap20_att_audit-action VALUE 'UPDATE_TITLE',
+      c_audit_set_current_version TYPE zsap20_att_audit-action VALUE 'SET_CURRENT_VERSION',
+      c_audit_delete              TYPE zsap20_att_audit-action VALUE 'DELETE',
+      c_audit_reactivate          TYPE zsap20_att_audit-action VALUE 'REACTIVATE',
+      c_audit_link_to_bo          TYPE zsap20_att_audit-action VALUE 'LINK_TO_BO',
+      c_audit_create_version      TYPE zsap20_att_audit-action VALUE 'CREATE_VERSION'.
 
   PRIVATE SECTION.
     CLASS-DATA gt_cfg TYPE tt_file_cfg.
@@ -205,13 +214,15 @@ CLASS zcl_attach_config IMPLEMENTATION.
     IF lv_ext IS INITIAL.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = 'FILE_EXTENSION must not be empty.'.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '028'.
     ENDIF.
 
     IF lv_mime IS INITIAL.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = 'MIME_TYPE must not be empty.'.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '029'.
     ENDIF.
 
     load_config( ).
@@ -224,7 +235,8 @@ CLASS zcl_attach_config IMPLEMENTATION.
     IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = 'No active configuration found for this extension and MIME type.'.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '030'.
     ENDIF.
   ENDMETHOD.
 

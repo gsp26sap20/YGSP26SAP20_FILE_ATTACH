@@ -1,0 +1,6 @@
+projection;
+strict ( 2 );
+
+define behavior for Z_C_CURRENT_USER_ROLE alias CurrentUserRole
+{
+}

@@ -11,5 +11,6 @@ authorization master ( instance )
   update;
   delete;
 
+
   field ( readonly ) Erdat, Ernam;
 }

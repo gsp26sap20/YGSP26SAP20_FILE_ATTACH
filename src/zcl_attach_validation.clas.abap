@@ -66,6 +66,12 @@ CLASS zcl_attach_validation DEFINITION
       IMPORTING iv_file_id TYPE zsap20_file_ver-file_id
       RAISING   zcx_attach_validation.
 
+    CLASS-METHODS check_latest_version_type
+      IMPORTING iv_file_id   TYPE zsap20_file_ver-file_id
+                iv_extension TYPE string
+                iv_mime_type TYPE string
+      RAISING   zcx_attach_validation.
+
 ENDCLASS.
 
 CLASS zcl_attach_validation IMPLEMENTATION.
@@ -206,54 +212,56 @@ CLASS zcl_attach_validation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_file_size_error.
-  DATA lv_max_bytes TYPE i.
-  DATA lv_error     TYPE string.
+    DATA lv_max_bytes TYPE i.
+    DATA lv_error     TYPE string.
 
-  CLEAR rv_error_text.
+    CLEAR rv_error_text.
 
-  lv_error = check_extension( iv_extension ).
-  IF lv_error IS NOT INITIAL.
-    rv_error_text = lv_error.
-    RETURN.
-  ENDIF.
-
-  lv_error = check_mime_type(
-               iv_extension = iv_extension
-               iv_mime_type = iv_mime_type ).
-  IF lv_error IS NOT INITIAL.
-    rv_error_text = lv_error.
-    RETURN.
-  ENDIF.
-
-  TRY.
-      lv_max_bytes = zcl_attach_config=>get_max_bytes(
-                       iv_extension = iv_extension
-                       iv_mime_type = iv_mime_type ).
-
-      IF lv_max_bytes <= 0.
-        rv_error_text = 'No active file size configuration found.'.
-        RETURN.
-      ENDIF.
-
-      IF iv_file_size > lv_max_bytes.
-        rv_error_text = |File size exceeds configured limit ({ lv_max_bytes } bytes).|.
-        RETURN.
-      ENDIF.
-
-    CATCH zcx_attach_validation.
-      rv_error_text = 'Invalid file configuration.'.
+    lv_error = check_extension( iv_extension ).
+    IF lv_error IS NOT INITIAL.
+      rv_error_text = lv_error.
       RETURN.
-  ENDTRY.
-ENDMETHOD.
+    ENDIF.
+
+    lv_error = check_mime_type(
+                 iv_extension = iv_extension
+                 iv_mime_type = iv_mime_type ).
+    IF lv_error IS NOT INITIAL.
+      rv_error_text = lv_error.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        lv_max_bytes = zcl_attach_config=>get_max_bytes(
+                         iv_extension = iv_extension
+                         iv_mime_type = iv_mime_type ).
+
+        IF lv_max_bytes <= 0.
+          rv_error_text = 'No active file size configuration found.'.
+          RETURN.
+        ENDIF.
+
+        IF iv_file_size > lv_max_bytes.
+          rv_error_text = |File size exceeds configured limit ({ lv_max_bytes } bytes).|.
+          RETURN.
+        ENDIF.
+
+      CATCH zcx_attach_validation.
+        rv_error_text = 'Invalid file configuration.'.
+        RETURN.
+    ENDTRY.
+  ENDMETHOD.
 
 
   METHOD check_file_content.
+
     IF iv_content IS INITIAL OR xstrlen( iv_content ) = 0.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
           iv_msgno = '011'.
     ENDIF.
+
   ENDMETHOD.
 
   METHOD check_active_state.
@@ -361,4 +369,91 @@ ENDMETHOD.
     ENDIF.
   ENDMETHOD.
 
+  METHOD check_latest_version_type.
+
+    DATA: lv_new_ext     TYPE string,
+          lv_new_mime    TYPE string,
+          lv_new_type    TYPE zsap20_att_cfg-type,
+          lv_last_ext    TYPE string,
+          lv_last_mime   TYPE string,
+          lv_last_type   TYPE zsap20_att_cfg-type,
+          lv_current_ver TYPE zgsp26sap20_verno,
+          ls_last_ver    TYPE zsap20_file_ver.
+
+    IF iv_file_id IS INITIAL.
+      RAISE EXCEPTION TYPE zcx_attach_validation
+        EXPORTING
+          iv_text = 'File ID must not be empty.'.
+    ENDIF.
+
+    " Normalize uploaded file info
+    lv_new_ext  = zcl_attach_config=>normalize_extension( iv_extension ).
+    lv_new_mime = zcl_attach_config=>normalize_mime_type( iv_mime_type ).
+
+    " Get current version from attachment master
+    SELECT SINGLE current_version
+      FROM zsap20_file_mgmt
+      INTO @lv_current_ver
+      WHERE file_id   = @iv_file_id
+        AND is_active = @abap_true.
+
+    " No previous version -> skip check
+    IF sy-subrc <> 0 OR lv_current_ver IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " Get latest version record
+    SELECT SINGLE *
+      FROM zsap20_file_ver
+      INTO @ls_last_ver
+      WHERE file_id    = @iv_file_id
+        AND version_no = @lv_current_ver.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    " Normalize latest version file info
+    lv_last_ext = zcl_attach_config=>normalize_extension(
+                    CONV string( ls_last_ver-file_extension ) ).
+
+    lv_last_mime = zcl_attach_config=>normalize_mime_type(
+                     CONV string( ls_last_ver-mime_type ) ).
+
+    " Get type of uploaded file from config
+    SELECT SINGLE type
+      FROM zsap20_att_cfg
+      INTO @lv_new_type
+      WHERE file_ext  = @lv_new_ext
+        AND mime_type = @lv_new_mime
+        AND is_active = 'X'.
+
+    IF sy-subrc <> 0 OR lv_new_type IS INITIAL.
+      RAISE EXCEPTION TYPE zcx_attach_validation
+        EXPORTING
+          iv_text = 'No active configuration found for uploaded file type.'.
+    ENDIF.
+
+    " Get type of latest version from config
+    SELECT SINGLE type
+      FROM zsap20_att_cfg
+      INTO @lv_last_type
+      WHERE file_ext  = @lv_last_ext
+        AND mime_type = @lv_last_mime
+        AND is_active = 'X'.
+
+    IF sy-subrc <> 0 OR lv_last_type IS INITIAL.
+      RAISE EXCEPTION TYPE zcx_attach_validation
+        EXPORTING
+          iv_text = 'No active configuration found for latest version file type.'.
+    ENDIF.
+
+    " Reject if type is different
+    IF lv_new_type <> lv_last_type.
+      RAISE EXCEPTION TYPE zcx_attach_validation
+        EXPORTING
+          iv_text = |Uploaded file type '{ lv_new_type }' does not match latest version type '{ lv_last_type }'.|.
+    ENDIF.
+
+  ENDMETHOD.
 ENDCLASS.

@@ -81,6 +81,15 @@
      <LENG>000100</LENG>
      <MASK>  CHAR</MASK>
     </DD03P>
+    <DD03P>
+     <FIELDNAME>TYPE</FIELDNAME>
+     <ADMINFIELD>0</ADMINFIELD>
+     <INTTYPE>C</INTTYPE>
+     <INTLEN>000040</INTLEN>
+     <DATATYPE>CHAR</DATATYPE>
+     <LENG>000020</LENG>
+     <MASK>  CHAR</MASK>
+    </DD03P>
    </DD03P_TABLE>
   </asx:values>
  </asx:abap>

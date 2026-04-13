@@ -32,19 +32,19 @@ CLASS lhc_Attach DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS rba_Versions FOR READ
       IMPORTING keys_rba FOR READ Attach\_Versions FULL result_requested RESULT result LINK association_links.
 
-*    METHODS deactivate FOR MODIFY
-*      IMPORTING keys FOR ACTION Attach~deactivate RESULT result.
+*    METHODS Deactivate FOR MODIFY
+*      IMPORTING keys FOR ACTION Attach~Deactivate RESULT result.
 
-    METHODS link_to_bo FOR MODIFY
-      IMPORTING keys FOR ACTION Attach~link_to_bo RESULT result.
+    METHODS LinkToBO FOR MODIFY
+      IMPORTING keys FOR ACTION Attach~LinkToBO RESULT result.
     METHODS cba_Versions FOR MODIFY
       IMPORTING entities_cba FOR CREATE Attach\_Versions.
-    METHODS deactivate FOR MODIFY
-      IMPORTING keys FOR ACTION Attach~deactivate RESULT result.
-    METHODS reactivate FOR MODIFY
-      IMPORTING keys FOR ACTION Attach~reactivate RESULT result.
-    METHODS download_version FOR MODIFY
-      IMPORTING keys FOR ACTION Attach~download_version RESULT result.
+*    METHODS Deactivate FOR MODIFY
+*      IMPORTING keys FOR ACTION Attach~Deactivate RESULT result.
+    METHODS Reactivate FOR MODIFY
+      IMPORTING keys FOR ACTION Attach~Reactivate RESULT result.
+*    METHODS download_version FOR MODIFY
+*      IMPORTING keys FOR ACTION Attach~download_version RESULT result.
     METHODS rba_Audit FOR READ
       IMPORTING keys_rba FOR READ Attach\_Audit FULL result_requested RESULT result LINK association_links.
     METHODS get_user_role
@@ -120,16 +120,16 @@ CLASS lhc_Attach IMPLEMENTATION.
 *        THEN if_abap_behv=>fc-o-enabled
 *        ELSE if_abap_behv=>fc-o-disabled )
 
-        %action-download_version = if_abap_behv=>fc-o-enabled
+*        %action-download_version = if_abap_behv=>fc-o-enabled
 
-        %action-link_to_bo = if_abap_behv=>fc-o-enabled
+        %action-LinkToBO = if_abap_behv=>fc-o-enabled
 
-        %action-deactivate = COND #(
-          WHEN can_delete_attach( key-FileId ) = abap_true
-          THEN if_abap_behv=>fc-o-enabled
-          ELSE if_abap_behv=>fc-o-disabled )
+*        %action-Deactivate = COND #(
+*          WHEN can_delete_attach( key-FileId ) = abap_true
+*          THEN if_abap_behv=>fc-o-enabled
+*          ELSE if_abap_behv=>fc-o-disabled )
 
-        %action-reactivate = COND #(
+        %action-Reactivate = COND #(
           WHEN is_admin( ) = abap_true
           THEN if_abap_behv=>fc-o-enabled
           ELSE if_abap_behv=>fc-o-disabled )
@@ -157,16 +157,16 @@ CLASS lhc_Attach IMPLEMENTATION.
           THEN if_abap_behv=>auth-allowed
           ELSE if_abap_behv=>auth-unauthorized )
 
-        %action-download_version = if_abap_behv=>auth-allowed
+*        %action-download_version = if_abap_behv=>auth-allowed
 
-        %action-link_to_bo = if_abap_behv=>auth-allowed
+        %action-LinkToBO = if_abap_behv=>auth-allowed
 
-        %action-deactivate = COND #(
-          WHEN can_delete_attach( key-FileId ) = abap_true
-          THEN if_abap_behv=>auth-allowed
-          ELSE if_abap_behv=>auth-unauthorized )
+*        %action-Deactivate = COND #(
+*          WHEN can_delete_attach( key-FileId ) = abap_true
+*          THEN if_abap_behv=>auth-allowed
+*          ELSE if_abap_behv=>auth-unauthorized )
 
-        %action-reactivate = COND #(
+        %action-Reactivate = COND #(
           WHEN is_admin( ) = abap_true
           THEN if_abap_behv=>auth-allowed
           ELSE if_abap_behv=>auth-unauthorized )
@@ -325,9 +325,10 @@ CLASS lhc_Attach IMPLEMENTATION.
           APPEND VALUE #( %cid = ls_ent-%cid ) TO failed-Attach.
           APPEND VALUE #(
             %cid = ls_ent-%cid
-            %msg = new_message_with_text(
-                     severity = if_abap_behv_message=>severity-error
-                     text     = 'Unable to generate FILE_ID (UUID).' )
+            %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '050'
+         severity = if_abap_behv_message=>severity-error )
           ) TO reported-Attach.
           CONTINUE.
       ENDTRY.
@@ -336,9 +337,10 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE #( %cid = ls_ent-%cid ) TO failed-Attach.
         APPEND VALUE #(
           %cid = ls_ent-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'FILE_ID is initial after UUID generation.' )
+          %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '051'
+         severity = if_abap_behv_message=>severity-error )
         ) TO reported-Attach.
         CONTINUE.
       ENDIF.
@@ -370,7 +372,7 @@ CLASS lhc_Attach IMPLEMENTATION.
       APPEND VALUE zsap20_att_audit(
         uname  = sy-uname
         file_id = lv_file_id
-        action = 'CREATE'
+        action = zcl_attach_config=>c_audit_create
         note   = |Created attachment. Title="{ ls_ent-Title }".|
         erdat  = sy-datum
         erzet  = sy-uzeit
@@ -385,9 +387,12 @@ CLASS lhc_Attach IMPLEMENTATION.
 
       APPEND VALUE #(
         %cid = ls_ent-%cid
-        %msg = new_message_with_text(
-                 severity = if_abap_behv_message=>severity-success
-                 text     = |Attachment created. FileId={ lv_file_id }.| )
+        %msg = new_message(
+               id       = 'YGSP26SAP20_MSG'
+               number   = '024'
+               v1       = lv_file_id
+               severity = if_abap_behv_message=>severity-error
+                   )
       ) TO reported-Attach.
 
     ENDLOOP.
@@ -415,9 +420,11 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_entity-%tky ) TO failed-attach.
         APPEND VALUE #(
           %tky = ls_entity-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'You do not have permission to update this attachment.' )
+          %msg = new_message(
+                 id       = 'YGSP26SAP20_MSG'
+                 number   = '025'
+                 severity = if_abap_behv_message=>severity-error
+         )
         ) TO reported-attach.
         CONTINUE.
       ENDIF.
@@ -463,7 +470,7 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE zsap20_att_audit(
         uname  = sy-uname
         file_id = ls_entity-FileId
-        action = 'UPDATE_TITLE'
+        action = zcl_attach_config=>c_audit_update_title
         note = |Title changed from "{ lv_title_db }" to "{ ls_entity-Title }"|
         erdat = sy-datum
         erzet = sy-uzeit
@@ -473,54 +480,102 @@ CLASS lhc_Attach IMPLEMENTATION.
 
 *         Rollback version
       IF ls_entity-CurrentVersion IS NOT INITIAL
-      AND CONV i( ls_entity-CurrentVersion ) < CONV i( lv_ver_db ).
+         AND CONV i( ls_entity-CurrentVersion ) <> CONV i( lv_ver_db ).
 
         TRY.
-            zcl_attach_validation=>check_rollback_target( iv_target_version = CONV string( ls_entity-CurrentVersion ) ).
+            zcl_attach_validation=>check_rollback_target(
+              iv_target_version = CONV string( ls_entity-CurrentVersion ) ).
           CATCH zcx_attach_validation INTO DATA(lx_roll).
             APPEND VALUE #( %tky = ls_entity-%tky ) TO failed-attach.
             APPEND VALUE #(
-                   %tky = ls_entity-%tky
-                   %msg = new_message_with_text(
-                          severity = if_abap_behv_message=>severity-error
-                          text = lx_roll->get_text( ) )
-                   %element-CurrentVersion = if_abap_behv=>mk-on
+              %tky = ls_entity-%tky
+              %msg = new_message_with_text(
+                       severity = if_abap_behv_message=>severity-error
+                       text     = lx_roll->get_text( ) )
+              %element-CurrentVersion = if_abap_behv=>mk-on
             ) TO reported-attach.
             CONTINUE.
         ENDTRY.
 
+        " Check target version exists for this file
+        SELECT SINGLE @abap_true
+          FROM zsap20_file_ver
+          WHERE file_id    = @ls_entity-FileId
+            AND version_no = @ls_entity-CurrentVersion
+          INTO @DATA(lv_target_exists).
+
+        IF sy-subrc <> 0.
+          APPEND VALUE #( %tky = ls_entity-%tky ) TO failed-attach.
+          APPEND VALUE #(
+            %tky = ls_entity-%tky
+            %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '027'
+                   v1       = ls_entity-CurrentVersion
+                   severity = if_abap_behv_message=>severity-error
+              )
+            %element-CurrentVersion = if_abap_behv=>mk-on
+          ) TO reported-attach.
+          CONTINUE.
+        ENDIF.
+
         UPDATE zsap20_file_mgmt
-        SET current_version = @ls_entity-CurrentVersion,
-        aedat = @sy-datum,
-        aezet = @sy-uzeit,
-        aenam = @sy-uname
-        WHERE file_id = @ls_entity-FileId.
+          SET current_version = @ls_entity-CurrentVersion,
+              aedat           = @sy-datum,
+              aezet           = @sy-uzeit,
+              aenam           = @sy-uname
+          WHERE file_id = @ls_entity-FileId.
 
         APPEND VALUE zsap20_att_audit(
-        uname = sy-uname
-        file_id = ls_entity-FileId
-        action = 'ROLLBACK_VERSION'
-        note = |Rollback version from { lv_ver_db } to { ls_entity-CurrentVersion }|
-        erdat = sy-datum
-        erzet = sy-uzeit
-        ernam = sy-uname
+          uname   = sy-uname
+          file_id = ls_entity-FileId
+          action  = zcl_attach_config=>c_audit_set_current_version
+          note    = |Current version changed from { lv_ver_db } to { ls_entity-CurrentVersion }|
+          erdat   = sy-datum
+          erzet   = sy-uzeit
+          ernam   = sy-uname
         ) TO zbp_i_attach_r=>gt_audit_buffer.
+
       ENDIF.
     ENDLOOP.
 
   ENDMETHOD.
 
-  " Xóa mềm - Chương
   METHOD delete.
-    DATA: lv_active TYPE zsap20_file_mgmt-is_active,
-          lv_curr   TYPE zsap20_file_mgmt-current_version.
+
+    DATA: lv_active   TYPE zsap20_file_mgmt-is_active,
+          lv_curr     TYPE zsap20_file_mgmt-current_version,
+          lv_has_link TYPE abap_bool.
+
     LOOP AT keys INTO DATA(ls_key).
+
+      CLEAR: lv_active, lv_curr, lv_has_link.
 
       SELECT SINGLE is_active,
                     current_version
-                    FROM zsap20_file_mgmt INTO ( @lv_active, @lv_curr )
-                    WHERE file_id = @ls_key-FileId.
+        FROM zsap20_file_mgmt
+        INTO ( @lv_active, @lv_curr )
+        WHERE file_id = @ls_key-FileId.
+
       IF sy-subrc <> 0.
+        CONTINUE.
+      ENDIF.
+
+      " Check attachment is linked to any Business Object
+      SELECT SINGLE @abap_true
+        FROM zsap20_bo_att_lk
+        WHERE file_id = @ls_key-FileId
+        INTO @lv_has_link.
+
+      IF sy-subrc = 0 AND lv_has_link = abap_true.
+        APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
+        APPEND VALUE #(
+          %tky = ls_key-%tky
+          %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '052'
+         severity = if_abap_behv_message=>severity-error )
+        ) TO reported-attach.
         CONTINUE.
       ENDIF.
 
@@ -528,9 +583,11 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
         APPEND VALUE #(
           %tky = ls_key-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Only owner or ADMIN can delete this attachment.' )
+          %msg = new_message(
+                 id       = 'YGSP26SAP20_MSG'
+                 number   = '028'
+                 severity = if_abap_behv_message=>severity-error
+               )
         ) TO reported-attach.
         CONTINUE.
       ENDIF.
@@ -542,35 +599,39 @@ CLASS lhc_Attach IMPLEMENTATION.
         CATCH zcx_attach_validation INTO DATA(lx_del).
 
           APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
-          APPEND VALUE #( %tky = ls_key-%tky
-                          %msg = new_message_with_text(
-                                 severity = if_abap_behv_message=>severity-error
-                                 text     = lx_del->get_text( ) )
-                        ) TO reported-attach.
+          APPEND VALUE #(
+            %tky = ls_key-%tky
+            %msg = new_message_with_text(
+                     severity = if_abap_behv_message=>severity-error
+                     text     = lx_del->get_text( ) )
+          ) TO reported-attach.
           CONTINUE.
       ENDTRY.
 
       UPDATE zsap20_file_mgmt
-      SET is_active = @abap_false,
-      aedat = @sy-datum,
-      aezet = @sy-uzeit,
-      aenam = @sy-uname
-      WHERE file_id = @ls_key-FileId AND is_active = @abap_true.
+        SET is_active = @abap_false,
+            aedat     = @sy-datum,
+            aezet     = @sy-uzeit,
+            aenam     = @sy-uname
+        WHERE file_id   = @ls_key-FileId
+          AND is_active = @abap_true.
+
       IF sy-subrc = 0.
         APPEND VALUE zsap20_att_audit(
-        uname = sy-uname
-        file_id = ls_key-FileId
-        action = 'DELETE'
-        note = |Soft delete attachment { ls_key-FileId }|
-        erdat = sy-datum
-        erzet = sy-uzeit
-        ernam = sy-uname
+          uname   = sy-uname
+          file_id = ls_key-FileId
+          action = zcl_attach_config=>c_audit_delete
+          note    = |Soft delete attachment { ls_key-FileId }|
+          erdat   = sy-datum
+          erzet   = sy-uzeit
+          ernam   = sy-uname
         ) TO zbp_i_attach_r=>gt_audit_buffer.
       ENDIF.
+
     ENDLOOP.
+
   ENDMETHOD.
 
-  "Đọc Attachment - Chương
   METHOD read.
 
     IF keys IS INITIAL.
@@ -618,7 +679,7 @@ CLASS lhc_Attach IMPLEMENTATION.
 
   ENDMETHOD.
 
-  METHOD reactivate.
+  METHOD Reactivate.
 
     LOOP AT keys INTO DATA(ls_key).
 
@@ -626,9 +687,10 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
         APPEND VALUE #(
           %tky = ls_key-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Only ADMIN can reactivate attachment.' )
+          %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '053'
+         severity = if_abap_behv_message=>severity-error )
         ) TO reported-attach.
         CONTINUE.
       ENDIF.
@@ -644,8 +706,8 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE zsap20_att_audit(
           uname   = sy-uname
           file_id = ls_key-FileId
-          action  = 'REACTIVATE'
-          note    = |Attachment reactivated by { sy-uname }.|
+          action = zcl_attach_config=>c_audit_reactivate
+          note    = |Attachment Reactivated by { sy-uname }.|
           erdat   = sy-datum
           erzet   = sy-uzeit
           ernam   = sy-uname
@@ -768,11 +830,11 @@ CLASS lhc_Attach IMPLEMENTATION.
 
   ENDMETHOD.
 *"Xóa mềm
-*  METHOD deactivate.
+*  METHOD Deactivate.
 *  ENDMETHOD.
 
-  "Link tới cái BO nào đó (Create bản ghi trên Z_I_BO_ATT_LK) - Bình
-  METHOD link_to_bo.
+  "Link tới cái BO nào đó - Bình
+  METHOD LinkToBO.
     DATA: ls_link_db     TYPE zsap20_bo_att_lk,
           lv_bo_exists   TYPE abap_bool,
           lv_link_exists TYPE abap_bool.
@@ -786,9 +848,10 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
         APPEND VALUE #(
             %tky = ls_key-%tky
-            %msg = new_message_with_text(
-                severity = if_abap_behv_message=>severity-error
-                text     = 'Please enter Business Object ID')
+            %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '054'
+         severity = if_abap_behv_message=>severity-error )
         ) TO reported-attach.
         CONTINUE.
       ENDIF.
@@ -803,9 +866,11 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
         APPEND VALUE #(
             %tky = ls_key-%tky
-            %msg = new_message_with_text(
-               severity = if_abap_behv_message=>severity-error
-               text     = |Business Object '{ lv_bo_id }' does not exist in the database!| )
+            %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '055'
+         v1       = lv_bo_id
+         severity = if_abap_behv_message=>severity-error )
         ) TO reported-attach.
         CONTINUE.
       ENDIF.
@@ -825,6 +890,27 @@ CLASS lhc_Attach IMPLEMENTATION.
           CONTINUE.
       ENDTRY.
 
+      " 3.5 Check if the Attachment itself is ACTIVE
+      DATA lv_is_active TYPE abap_bool.
+
+      SELECT SINGLE is_active
+          FROM zsap20_file_mgmt
+          WHERE file_id = @ls_key-FileId
+          INTO @lv_is_active.
+
+      " if found but is_active = false
+      IF sy-subrc = 0 AND lv_is_active = abap_false.
+        APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
+        APPEND VALUE #(
+            %tky = ls_key-%tky
+            %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '056'
+         severity = if_abap_behv_message=>severity-error )
+        ) TO reported-attach.
+        CONTINUE.
+      ENDIF.
+
       " 4. Check if this file already been prev linked to this bo -> if YES so INSERT -> dumpppp
       SELECT SINGLE @abap_true
           FROM zsap20_bo_att_lk
@@ -836,9 +922,11 @@ CLASS lhc_Attach IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
         APPEND VALUE #(
           %tky = ls_key-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-warning
-                   text     = |This file already been previously linked to Business Object: '{ lv_bo_id }'| )
+          %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '057'
+         v1       = lv_bo_id
+         severity = if_abap_behv_message=>severity-warning )
         ) TO reported-attach.
         CONTINUE.
       ENDIF.
@@ -857,7 +945,7 @@ CLASS lhc_Attach IMPLEMENTATION.
       APPEND VALUE zsap20_att_audit(
         uname   = sy-uname
         file_id = ls_key-FileId
-        action  = 'LINK_TO_BO'
+        action = zcl_attach_config=>c_audit_link_to_bo
         note    = |Linked file to Business Object: { lv_bo_id }|
         erdat   = sy-datum
         erzet   = sy-uzeit
@@ -870,9 +958,11 @@ CLASS lhc_Attach IMPLEMENTATION.
 
       APPEND VALUE #(
           %tky = ls_key-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-success
-                   text     = |Linked to Business Object '{ lv_bo_id }' successfully!| )
+          %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '058'
+         v1       = lv_bo_id
+         severity = if_abap_behv_message=>severity-success )
       ) TO reported-attach.
 
     ENDLOOP.
@@ -975,333 +1065,333 @@ CLASS lhc_Attach IMPLEMENTATION.
 
 
   METHOD cba_Versions.
-
-    DATA: ls_mgmt     TYPE zsap20_file_mgmt,
-          ls_ver_db   TYPE zsap20_file_ver,
-          lv_max_ver  TYPE zgsp26sap20_verno,
-          lv_next_i   TYPE i,
-          lv_next_ver TYPE zgsp26sap20_verno,
-          lv_b64      TYPE string,
-          lv_xcont    TYPE xstring.
-
-    LOOP AT entities_cba INTO DATA(ls_cba).
-
-      " Get master Attach (BUFFER -> DB)
-      CLEAR ls_mgmt.
-
-      "Check buffer first
-      READ TABLE zbp_i_attach_r=>gt_attach_buffer
-        INTO ls_mgmt
-        WITH KEY file_id = ls_cba-FileId.
-
-      IF sy-subrc <> 0.
-
-        "Check DB
-        SELECT SINGLE *
-          FROM zsap20_file_mgmt
-          INTO @ls_mgmt
-          WHERE file_id   = @ls_cba-FileId
-            AND is_active = @abap_true.
-
-      ENDIF.
-
-      " Validate master exists
-      IF ls_mgmt-file_id IS INITIAL.
-
-        APPEND VALUE #( %tky = ls_cba-%tky ) TO failed-versions.
-
-        APPEND VALUE #(
-          %tky = ls_cba-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Attachment not found.' )
-        ) TO reported-versions.
-
-        CONTINUE.
-
-      ENDIF.
-
-      " Edit lock check
-      IF ls_mgmt-edit_lock = abap_true
-         AND ls_mgmt-ernam <> sy-uname
-         AND is_admin( ) <> abap_true.
-
-        APPEND VALUE #( %tky = ls_cba-%tky ) TO failed-versions.
-
-        APPEND VALUE #(
-          %tky = ls_cba-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = |Attachment locked. Only owner { ls_mgmt-ernam } can add versions.| )
-        ) TO reported-versions.
-
-        CONTINUE.
-
-      ENDIF.
-
-      " Loop target payload
-      LOOP AT ls_cba-%target INTO DATA(ls_v).
-
-        " Validation
-        DATA lv_error_text TYPE string.
-        DATA lv_max_bytes  TYPE i.
-        DATA lv_ext_str    TYPE string.
-        DATA lv_mime_str   TYPE string.
-
-        CLEAR: lv_error_text, lv_max_bytes, lv_ext_str, lv_mime_str.
-
-        lv_ext_str  = CONV string( ls_v-FileExtension ).
-        lv_mime_str = CONV string( ls_v-MimeType ).
-
-        lv_error_text = zcl_attach_validation=>check_extension(
-                          iv_extension = lv_ext_str ).
-        IF lv_error_text IS NOT INITIAL.
-          APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
-          APPEND VALUE #(
-            %key = ls_v-%key
-            %msg = new_message_with_text(
-                     severity = if_abap_behv_message=>severity-error
-                     text     = lv_error_text )
-            %element-FileExtension = if_abap_behv=>mk-on
-          ) TO reported-versions.
-          CONTINUE.
-        ENDIF.
-
-        lv_error_text = zcl_attach_validation=>check_mime_type(
-                          iv_extension = lv_ext_str
-                          iv_mime_type = lv_mime_str ).
-        IF lv_error_text IS NOT INITIAL.
-          APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
-          APPEND VALUE #(
-            %key = ls_v-%key
-            %msg = new_message_with_text(
-                     severity = if_abap_behv_message=>severity-error
-                     text     = lv_error_text )
-            %element-MimeType = if_abap_behv=>mk-on
-          ) TO reported-versions.
-          CONTINUE.
-        ENDIF.
-
-        TRY.
-            zcl_attach_validation=>check_file_content(
-              iv_content = ls_v-FileContent ).
-          CATCH zcx_attach_validation INTO DATA(lx_val).
-            APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
-            APPEND VALUE #(
-              %key = ls_v-%key
-              %msg = new_message_with_text(
-                       severity = if_abap_behv_message=>severity-error
-                       text     = lx_val->get_text( ) )
-            ) TO reported-versions.
-            CONTINUE.
-        ENDTRY.
-
-        lv_error_text = zcl_attach_validation=>get_file_size_error(
-                          iv_extension = lv_ext_str
-                          iv_mime_type = lv_mime_str
-                          iv_file_size = ls_v-FileSize ).
-        IF lv_error_text IS NOT INITIAL.
-          APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
-          APPEND VALUE #(
-            %key = ls_v-%key
-            %msg = new_message_with_text(
-                     severity = if_abap_behv_message=>severity-error
-                     text     = lv_error_text )
-            %element-FileSize = if_abap_behv=>mk-on
-          ) TO reported-versions.
-          CONTINUE.
-        ENDIF.
-
-        " Decode Base64 -> XSTRING
-        CLEAR: lv_b64, lv_xcont.
-        lv_b64 = CONV string( ls_v-FileContent ).
-
-        TRY.
-            lv_xcont = cl_http_utility=>decode_x_base64( lv_b64 ).
-          CATCH cx_root INTO DATA(lx_decode).
-
-            APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
-
-            APPEND VALUE #(
-              %key = ls_v-%key
-              %msg = new_message_with_text(
-                       severity = if_abap_behv_message=>severity-error
-                       text     = 'FileContent is not valid Base64.' )
-            ) TO reported-versions.
-
-            CONTINUE.
-
-        ENDTRY.
-
-        " Determine next version
-        CLEAR lv_max_ver.
-
-        SELECT SINGLE MAX( version_no )
-          FROM zsap20_file_ver
-          INTO @lv_max_ver
-          WHERE file_id = @ls_cba-FileId.
-
-        LOOP AT zbp_i_attach_r=>gt_ver_buffer INTO DATA(ls_buf_ver)
-          WHERE file_id = ls_cba-FileId.
-
-          IF ls_buf_ver-version_no > lv_max_ver.
-            lv_max_ver = ls_buf_ver-version_no.
-          ENDIF.
-
-        ENDLOOP.
-
-        IF lv_max_ver IS INITIAL.
-          lv_next_i = 1.
-        ELSE.
-          lv_next_i = lv_max_ver + 1.
-        ENDIF.
-
-        IF lv_next_i > 999.
-
-          APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
-
-          APPEND VALUE #(
-            %key = ls_v-%key
-            %msg = new_message_with_text(
-                     severity = if_abap_behv_message=>severity-error
-                     text     = 'Maximum version limit (999) reached.' )
-          ) TO reported-versions.
-
-          CONTINUE.
-
-        ENDIF.
-
-        " Format version number
-        lv_next_ver = |{ lv_next_i WIDTH = 3 PAD = '0' }|.
-
-        " Buffer version
-        CLEAR ls_ver_db.
-
-        ls_ver_db-file_id          = ls_cba-FileId.
-        ls_ver_db-version_no       = lv_next_ver.
-        ls_ver_db-file_name        = ls_v-FileName.
-        ls_ver_db-file_extension   = ls_v-FileExtension.
-        ls_ver_db-mime_type        = ls_v-MimeType.
-        ls_ver_db-file_size        = ls_v-FileSize.
-
-        " Giữ field text cũ nếu project vẫn còn dùng
-        ls_ver_db-file_content     = ls_v-FileContent.
-
-        ls_ver_db-erdat = sy-datum.
-        ls_ver_db-erzet = sy-uzeit.
-        ls_ver_db-ernam = sy-uname.
-
-        APPEND ls_ver_db TO zbp_i_attach_r=>gt_ver_buffer.
-
-        "Update current version of attachment
-        READ TABLE zbp_i_attach_r=>gt_attach_buffer
-          ASSIGNING FIELD-SYMBOL(<ls_attach>)
-          WITH KEY file_id = ls_cba-FileId.
-
-        IF sy-subrc = 0.
-
-          <ls_attach>-current_version = lv_next_ver.
-          <ls_attach>-aedat = sy-datum.
-          <ls_attach>-aezet = sy-uzeit.
-          <ls_attach>-aenam = sy-uname.
-
-        ELSE.
-
-          UPDATE zsap20_file_mgmt
-            SET current_version = @lv_next_ver,
-                aedat           = @sy-datum,
-                aezet           = @sy-uzeit,
-                aenam           = @sy-uname
-            WHERE file_id   = @ls_cba-FileId
-              AND is_active = @abap_true.
-
-        ENDIF.
-
-        " Audit buffer
-        APPEND VALUE zsap20_att_audit(
-          uname   = sy-uname
-          file_id = ls_cba-FileId
-          action  = 'CREATE_VERSION'
-          note    = |Created version { lv_next_ver }.|
-          erdat   = sy-datum
-          erzet   = sy-uzeit
-          ernam   = sy-uname
-        ) TO zbp_i_attach_r=>gt_audit_buffer.
-
-        " mapped result
-        APPEND VALUE #(
-          %cid      = ls_v-%cid
-          FileId    = ls_cba-FileId
-          VersionNo = lv_next_ver
-        ) TO mapped-versions.
-
-        " success message
-        APPEND VALUE #(
-          %cid = ls_v-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-success
-                   text     = |Version { lv_next_ver } uploaded.| )
-        ) TO reported-versions.
-
-      ENDLOOP.
-
-    ENDLOOP.
+*
+*    DATA: ls_mgmt     TYPE zsap20_file_mgmt,
+*          ls_ver_db   TYPE zsap20_file_ver,
+*          lv_max_ver  TYPE zgsp26sap20_verno,
+*          lv_next_i   TYPE i,
+*          lv_next_ver TYPE zgsp26sap20_verno,
+*          lv_b64      TYPE string,
+*          lv_xcont    TYPE xstring.
+*
+*    LOOP AT entities_cba INTO DATA(ls_cba).
+*
+*      " Get master Attach (BUFFER -> DB)
+*      CLEAR ls_mgmt.
+*
+*      "Check buffer first
+*      READ TABLE zbp_i_attach_r=>gt_attach_buffer
+*        INTO ls_mgmt
+*        WITH KEY file_id = ls_cba-FileId.
+*
+*      IF sy-subrc <> 0.
+*
+*        "Check DB
+*        SELECT SINGLE *
+*          FROM zsap20_file_mgmt
+*          INTO @ls_mgmt
+*          WHERE file_id   = @ls_cba-FileId
+*            AND is_active = @abap_true.
+*
+*      ENDIF.
+*
+*      " Validate master exists
+*      IF ls_mgmt-file_id IS INITIAL.
+*
+*        APPEND VALUE #( %tky = ls_cba-%tky ) TO failed-versions.
+*
+*        APPEND VALUE #(
+*          %tky = ls_cba-%tky
+*          %msg = new_message_with_text(
+*                   severity = if_abap_behv_message=>severity-error
+*                   text     = 'Attachment not found.' )
+*        ) TO reported-versions.
+*
+*        CONTINUE.
+*
+*      ENDIF.
+*
+*      " Edit lock check
+*      IF ls_mgmt-edit_lock = abap_true
+*         AND ls_mgmt-ernam <> sy-uname
+*         AND is_admin( ) <> abap_true.
+*
+*        APPEND VALUE #( %tky = ls_cba-%tky ) TO failed-versions.
+*
+*        APPEND VALUE #(
+*          %tky = ls_cba-%tky
+*          %msg = new_message_with_text(
+*                   severity = if_abap_behv_message=>severity-error
+*                   text     = |Attachment locked. Only owner { ls_mgmt-ernam } can add versions.| )
+*        ) TO reported-versions.
+*
+*        CONTINUE.
+*
+*      ENDIF.
+*
+*      " Loop target payload
+*      LOOP AT ls_cba-%target INTO DATA(ls_v).
+*
+*        " Validation
+*        DATA lv_error_text TYPE string.
+*        DATA lv_max_bytes  TYPE i.
+*        DATA lv_ext_str    TYPE string.
+*        DATA lv_mime_str   TYPE string.
+*
+*        CLEAR: lv_error_text, lv_max_bytes, lv_ext_str, lv_mime_str.
+*
+*        lv_ext_str  = CONV string( ls_v-FileExtension ).
+*        lv_mime_str = CONV string( ls_v-MimeType ).
+*
+*        lv_error_text = zcl_attach_validation=>check_extension(
+*                          iv_extension = lv_ext_str ).
+*        IF lv_error_text IS NOT INITIAL.
+*          APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
+*          APPEND VALUE #(
+*            %key = ls_v-%key
+*            %msg = new_message_with_text(
+*                     severity = if_abap_behv_message=>severity-error
+*                     text     = lv_error_text )
+*            %element-FileExtension = if_abap_behv=>mk-on
+*          ) TO reported-versions.
+*          CONTINUE.
+*        ENDIF.
+*
+*        lv_error_text = zcl_attach_validation=>check_mime_type(
+*                          iv_extension = lv_ext_str
+*                          iv_mime_type = lv_mime_str ).
+*        IF lv_error_text IS NOT INITIAL.
+*          APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
+*          APPEND VALUE #(
+*            %key = ls_v-%key
+*            %msg = new_message_with_text(
+*                     severity = if_abap_behv_message=>severity-error
+*                     text     = lv_error_text )
+*            %element-MimeType = if_abap_behv=>mk-on
+*          ) TO reported-versions.
+*          CONTINUE.
+*        ENDIF.
+*
+*        TRY.
+*            zcl_attach_validation=>check_file_content(
+*              iv_content = ls_v-FileContent ).
+*          CATCH zcx_attach_validation INTO DATA(lx_val).
+*            APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
+*            APPEND VALUE #(
+*              %key = ls_v-%key
+*              %msg = new_message_with_text(
+*                       severity = if_abap_behv_message=>severity-error
+*                       text     = lx_val->get_text( ) )
+*            ) TO reported-versions.
+*            CONTINUE.
+*        ENDTRY.
+*
+*        lv_error_text = zcl_attach_validation=>get_file_size_error(
+*                          iv_extension = lv_ext_str
+*                          iv_mime_type = lv_mime_str
+*                          iv_file_size = ls_v-FileSize ).
+*        IF lv_error_text IS NOT INITIAL.
+*          APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
+*          APPEND VALUE #(
+*            %key = ls_v-%key
+*            %msg = new_message_with_text(
+*                     severity = if_abap_behv_message=>severity-error
+*                     text     = lv_error_text )
+*            %element-FileSize = if_abap_behv=>mk-on
+*          ) TO reported-versions.
+*          CONTINUE.
+*        ENDIF.
+*
+*        " Decode Base64 -> XSTRING
+*        CLEAR: lv_b64, lv_xcont.
+*        lv_b64 = CONV string( ls_v-FileContent ).
+*
+*        TRY.
+*            lv_xcont = cl_http_utility=>decode_x_base64( lv_b64 ).
+*          CATCH cx_root INTO DATA(lx_decode).
+*
+*            APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
+*
+*            APPEND VALUE #(
+*              %key = ls_v-%key
+*              %msg = new_message_with_text(
+*                       severity = if_abap_behv_message=>severity-error
+*                       text     = 'FileContent is not valid Base64.' )
+*            ) TO reported-versions.
+*
+*            CONTINUE.
+*
+*        ENDTRY.
+*
+*        " Determine next version
+*        CLEAR lv_max_ver.
+*
+*        SELECT SINGLE MAX( version_no )
+*          FROM zsap20_file_ver
+*          INTO @lv_max_ver
+*          WHERE file_id = @ls_cba-FileId.
+*
+*        LOOP AT zbp_i_attach_r=>gt_ver_buffer INTO DATA(ls_buf_ver)
+*          WHERE file_id = ls_cba-FileId.
+*
+*          IF ls_buf_ver-version_no > lv_max_ver.
+*            lv_max_ver = ls_buf_ver-version_no.
+*          ENDIF.
+*
+*        ENDLOOP.
+*
+*        IF lv_max_ver IS INITIAL.
+*          lv_next_i = 1.
+*        ELSE.
+*          lv_next_i = lv_max_ver + 1.
+*        ENDIF.
+*
+*        IF lv_next_i > 999.
+*
+*          APPEND VALUE #( %key = ls_v-%key ) TO failed-versions.
+*
+*          APPEND VALUE #(
+*            %key = ls_v-%key
+*            %msg = new_message_with_text(
+*                     severity = if_abap_behv_message=>severity-error
+*                     text     = 'Maximum version limit (999) reached.' )
+*          ) TO reported-versions.
+*
+*          CONTINUE.
+*
+*        ENDIF.
+*
+*        " Format version number
+*        lv_next_ver = |{ lv_next_i WIDTH = 3 PAD = '0' }|.
+*
+*        " Buffer version
+*        CLEAR ls_ver_db.
+*
+*        ls_ver_db-file_id          = ls_cba-FileId.
+*        ls_ver_db-version_no       = lv_next_ver.
+*        ls_ver_db-file_name        = ls_v-FileName.
+*        ls_ver_db-file_extension   = ls_v-FileExtension.
+*        ls_ver_db-mime_type        = ls_v-MimeType.
+*        ls_ver_db-file_size        = ls_v-FileSize.
+*
+*        " Giữ field text cũ nếu project vẫn còn dùng
+*        ls_ver_db-file_content     = ls_v-FileContent.
+*
+*        ls_ver_db-erdat = sy-datum.
+*        ls_ver_db-erzet = sy-uzeit.
+*        ls_ver_db-ernam = sy-uname.
+*
+*        APPEND ls_ver_db TO zbp_i_attach_r=>gt_ver_buffer.
+*
+*        "Update current version of attachment
+*        READ TABLE zbp_i_attach_r=>gt_attach_buffer
+*          ASSIGNING FIELD-SYMBOL(<ls_attach>)
+*          WITH KEY file_id = ls_cba-FileId.
+*
+*        IF sy-subrc = 0.
+*
+*          <ls_attach>-current_version = lv_next_ver.
+*          <ls_attach>-aedat = sy-datum.
+*          <ls_attach>-aezet = sy-uzeit.
+*          <ls_attach>-aenam = sy-uname.
+*
+*        ELSE.
+*
+*          UPDATE zsap20_file_mgmt
+*            SET current_version = @lv_next_ver,
+*                aedat           = @sy-datum,
+*                aezet           = @sy-uzeit,
+*                aenam           = @sy-uname
+*            WHERE file_id   = @ls_cba-FileId
+*              AND is_active = @abap_true.
+*
+*        ENDIF.
+*
+*        " Audit buffer
+*        APPEND VALUE zsap20_att_audit(
+*          uname   = sy-uname
+*          file_id = ls_cba-FileId
+*          action  = 'CREATE_VERSION'
+*          note    = |Created version { lv_next_ver }.|
+*          erdat   = sy-datum
+*          erzet   = sy-uzeit
+*          ernam   = sy-uname
+*        ) TO zbp_i_attach_r=>gt_audit_buffer.
+*
+*        " mapped result
+*        APPEND VALUE #(
+*          %cid      = ls_v-%cid
+*          FileId    = ls_cba-FileId
+*          VersionNo = lv_next_ver
+*        ) TO mapped-versions.
+*
+*        " success message
+*        APPEND VALUE #(
+*          %cid = ls_v-%cid
+*          %msg = new_message_with_text(
+*                   severity = if_abap_behv_message=>severity-success
+*                   text     = |Version { lv_next_ver } uploaded.| )
+*        ) TO reported-versions.
+*
+*      ENDLOOP.
+*
+*    ENDLOOP.
 
   ENDMETHOD.
 
-  METHOD deactivate.
-  ENDMETHOD.
+*  METHOD Deactivate.
+*  ENDMETHOD.
 
   "Down - Chương (trả về FileContent của current version, Mime, extension, filename)
-  METHOD download_version.
-    DATA: ls_db      TYPE zsap20_file_ver,
-          lv_version TYPE zsap20_file_ver-version_no.
-
-    LOOP AT keys ASSIGNING FIELD-SYMBOL(<ls_key>).
-
-      lv_version = <ls_key>-%param-version_no.
-
-      SELECT SINGLE
-          v~file_id,
-          v~version_no,
-          v~file_name,
-          v~file_extension,
-          v~mime_type,
-          v~file_size,
-          v~file_content,
-          v~erdat,
-          v~erzet,
-          v~ernam
-     FROM zsap20_file_mgmt AS m
-     INNER JOIN zsap20_file_ver AS v
-       ON v~file_id = m~file_id
-     INTO CORRESPONDING FIELDS OF @ls_db
-     WHERE m~file_id   = @<ls_key>-FileId
-       AND m~is_active = @abap_true
-       AND v~version_no = @lv_version.
-
-      IF sy-subrc <> 0.
-        CONTINUE.
-      ENDIF.
-
-      APPEND INITIAL LINE TO result ASSIGNING FIELD-SYMBOL(<res>).
-
-      <res>-%tky = <ls_key>-%tky.
-
-      <res>-%param-FileId        = ls_db-file_id.
-      <res>-%param-VersionNo     = ls_db-version_no.
-      <res>-%param-FileName      = ls_db-file_name.
-      <res>-%param-FileExtension = ls_db-file_extension.
-      <res>-%param-MimeType      = ls_db-mime_type.
-      <res>-%param-FileSize      = ls_db-file_size.
-      <res>-%param-FileContent   = ls_db-file_content.
-      <res>-%param-Erdat         = ls_db-erdat.
-      <res>-%param-Erzet         = ls_db-erzet.
-      <res>-%param-Ernam         = ls_db-ernam.
-
-    ENDLOOP.
-
-  ENDMETHOD.
+*  METHOD download_version.
+*    DATA: ls_db      TYPE zsap20_file_ver,
+*          lv_version TYPE zsap20_file_ver-version_no.
+*
+*    LOOP AT keys ASSIGNING FIELD-SYMBOL(<ls_key>).
+*
+*      lv_version = <ls_key>-%param-version_no.
+*
+*      SELECT SINGLE
+*          v~file_id,
+*          v~version_no,
+*          v~file_name,
+*          v~file_extension,
+*          v~mime_type,
+*          v~file_size,
+*          v~file_content,
+*          v~erdat,
+*          v~erzet,
+*          v~ernam
+*     FROM zsap20_file_mgmt AS m
+*     INNER JOIN zsap20_file_ver AS v
+*       ON v~file_id = m~file_id
+*     INTO CORRESPONDING FIELDS OF @ls_db
+*     WHERE m~file_id   = @<ls_key>-FileId
+*       AND m~is_active = @abap_true
+*       AND v~version_no = @lv_version.
+*
+*      IF sy-subrc <> 0.
+*        CONTINUE.
+*      ENDIF.
+*
+*      APPEND INITIAL LINE TO result ASSIGNING FIELD-SYMBOL(<res>).
+*
+*      <res>-%tky = <ls_key>-%tky.
+*
+*      <res>-%param-FileId        = ls_db-file_id.
+*      <res>-%param-VersionNo     = ls_db-version_no.
+*      <res>-%param-FileName      = ls_db-file_name.
+*      <res>-%param-FileExtension = ls_db-file_extension.
+*      <res>-%param-MimeType      = ls_db-mime_type.
+*      <res>-%param-FileSize      = ls_db-file_size.
+*      <res>-%param-FileContent   = ls_db-file_content.
+*      <res>-%param-Erdat         = ls_db-erdat.
+*      <res>-%param-Erzet         = ls_db-erzet.
+*      <res>-%param-Ernam         = ls_db-ernam.
+*
+*    ENDLOOP.
+*
+*  ENDMETHOD.
 
   METHOD rba_Audit.
 
@@ -1481,9 +1571,10 @@ CLASS lhc_Versions IMPLEMENTATION.
 
         APPEND VALUE #(
           %cid = ls_ent-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Attachment not found.' )
+         %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '059'
+         severity = if_abap_behv_message=>severity-error )
         ) TO reported-versions.
 
         CONTINUE.
@@ -1498,9 +1589,11 @@ CLASS lhc_Versions IMPLEMENTATION.
 
         APPEND VALUE #(
           %cid = ls_ent-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = |Attachment locked. Only owner { ls_mgmt-ernam } can upload.| )
+        %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '060'
+         v1       = ls_mgmt-ernam
+         severity = if_abap_behv_message=>severity-error )
         ) TO reported-versions.
 
         CONTINUE.
@@ -1613,6 +1706,26 @@ CLASS lhc_Versions IMPLEMENTATION.
 
         CONTINUE.
       ENDIF.
+      TRY.
+          zcl_attach_validation=>check_latest_version_type(
+            iv_file_id   = ls_ent-FileId
+            iv_extension = lv_ext_str
+            iv_mime_type = lv_mime_str ).
+        CATCH zcx_attach_validation INTO lx_val.
+
+          APPEND VALUE #( %cid = ls_ent-%cid ) TO failed-versions.
+
+          APPEND VALUE #(
+            %cid = ls_ent-%cid
+            %msg = new_message_with_text(
+                     severity = if_abap_behv_message=>severity-error
+                     text     = lx_val->get_text( ) )
+            %element-FileExtension = if_abap_behv=>mk-on
+            %element-MimeType      = if_abap_behv=>mk-on
+          ) TO reported-versions.
+
+          CONTINUE.
+      ENDTRY.
 
 *     5. Determine next version
       CLEAR lv_max_ver.
@@ -1643,9 +1756,10 @@ CLASS lhc_Versions IMPLEMENTATION.
 
         APPEND VALUE #(
           %cid = ls_ent-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Version limit exceeded (999).' )
+         %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '061'
+         severity = if_abap_behv_message=>severity-error )
         ) TO reported-versions.
 
         CONTINUE.
@@ -1703,7 +1817,7 @@ CLASS lhc_Versions IMPLEMENTATION.
 
         uname   = sy-uname
         file_id = ls_ent-FileId
-        action  = 'CREATE_VERSION'
+        action = zcl_attach_config=>c_audit_create_version
         note    = |Created version { lv_next_ver }.|
 
         erdat   = sy-datum
@@ -1722,9 +1836,11 @@ CLASS lhc_Versions IMPLEMENTATION.
 *     10. success message
       APPEND VALUE #(
         %cid = ls_ent-%cid
-        %msg = new_message_with_text(
-                 severity = if_abap_behv_message=>severity-success
-                 text     = |Version { lv_next_ver } uploaded.| )
+        %msg = new_message(
+         id       = 'YGSP26SAP20_MSG'
+         number   = '062'
+         v1       = lv_next_ver
+         severity = if_abap_behv_message=>severity-success )
       ) TO reported-versions.
 
     ENDLOOP.

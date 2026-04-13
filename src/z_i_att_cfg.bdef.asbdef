@@ -1,0 +1,14 @@
+unmanaged implementation in class zbp_i_att_cfg unique;
+strict ( 2 );
+
+define behavior for Z_I_ATT_CFG alias AttCfg
+lock master
+authorization master ( instance )
+{
+  create;
+  update;
+  action disable;
+  action enable;
+
+  field ( readonly ) FileExt;
+}

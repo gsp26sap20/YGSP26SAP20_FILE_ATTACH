@@ -1,0 +1,13 @@
+@EndUserText.label: 'Attachment Admin Dashboard Service'
+define service ZUI_ATT_ADMIN_DASH {
+  expose Z_C_ATT_OVERVIEW as AttachmentOverview;
+  expose Z_C_AUTH_OVERVIEW as AuthOverview;
+  expose Z_C_BO_OVERVIEW as BusinessObjectOverview;
+  expose Z_C_LINK_OVERVIEW as LinkOverview;
+  expose Z_C_CFG_OVERVIEW as ConfigOverview;
+  expose Z_C_ATT_STATS_TYPE as AttachmentStatsByType;
+  expose Z_C_RECENT_AUDIT_LOG as RecentAuditLogs;
+  expose Z_C_USER_ROLE_OVV as UserRoleOverview;
+  expose Z_C_FILE_CFG_OVV as FileConfigList;
+  expose Z_C_ADMIN_DASH_STATS as AdminDashboardStats;
+}

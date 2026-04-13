@@ -45,40 +45,100 @@ CLASS lhc_BizObj IMPLEMENTATION.
 
     LOOP AT entities INTO DATA(ls_entity).
 
-      " Create UUID for BoId
+      " 1. Validate Title
+      DATA(lv_title) = ls_entity-BoTitle.
+      " Remove whitespace at begining, end
+      CONDENSE lv_title.
+      REPLACE ALL OCCURRENCES OF `ㅤ` IN lv_title WITH ``.
+
+      " If empty (or all empty characters) -> block.
+      IF lv_title IS INITIAL.
+        APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-bizobj.
+        APPEND VALUE #( %cid = ls_entity-%cid
+                        %msg = new_message(
+                               id       = 'YGSP26SAP20_MSG'
+                               number   = '039'
+                               severity = if_abap_behv_message=>severity-error )
+                        %element-BoTitle = if_abap_behv=>mk-on " warning Type field
+                      ) TO reported-bizobj.
+        CONTINUE. " skip creation
+      ENDIF.
+
+      " 2. Validate Type
+      DATA(lv_type) = ls_entity-BoType.
+
+      IF lv_type <> 'PORDER' AND lv_type <> 'SORDER' AND lv_type <> 'INVOICE'.
+        APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-bizobj.
+        APPEND VALUE #( %cid = ls_entity-%cid
+                        %msg = new_message(
+                               id       = 'YGSP26SAP20_MSG'
+                               number   = '040'
+                               severity = if_abap_behv_message=>severity-error )
+                        %element-BoType = if_abap_behv=>mk-on
+                      ) TO reported-bizobj.
+        CONTINUE.
+      ENDIF.
+
+      " 3. Status validation
+      DATA(lv_status) = ls_entity-Status.
+
+      " If not enter, "New" is default
+      IF lv_status IS INITIAL.
+        lv_status = 'NEW'.
+      ENDIF.
+
+      " Check if entered status is permitted
+      IF lv_status <> 'NEW' AND lv_status <> 'INPR' AND lv_status <> 'COMP'.
+        APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-bizobj.
+        APPEND VALUE #( %cid = ls_entity-%cid
+                        %msg = new_message(
+                               id       = 'YGSP26SAP20_MSG'
+                               number   = '041'
+                               severity = if_abap_behv_message=>severity-error )
+                        %element-Status = if_abap_behv=>mk-on
+                      ) TO reported-bizobj.
+        CONTINUE. " Skip this entry, do not proceed continue
+      ENDIF.
+
+      "4. Create UUID for BoId
       CLEAR lv_bo_id.
       TRY.
           lv_bo_id = cl_system_uuid=>create_uuid_x16_static(  ).
         CATCH cx_uuid_error.
           APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-bizobj.
           APPEND VALUE #( %cid = ls_entity-%cid
-                          %msg = new_message_with_text(
-                                  severity = if_abap_behv_message=>severity-error
-                                  text     = 'Unable to generate Business Object ID')
+                          %msg = new_message(
+                               id       = 'YGSP26SAP20_MSG'
+                               number   = '042'
+                               severity = if_abap_behv_message=>severity-error )
                         ) TO reported-bizobj.
           CONTINUE.
       ENDTRY.
 
-      " bring data to Buffer
+      "5. bring data to Buffer
       CLEAR ls_biz_obj.
       ls_biz_obj-bo_id    = lv_bo_id.
       ls_biz_obj-bo_type  = ls_entity-BoType.
       ls_biz_obj-bo_title = ls_entity-BoTitle.
-      ls_biz_obj-status   = ls_entity-Status.
+      ls_biz_obj-status   = lv_status.
       ls_biz_obj-erdat    = sy-datum.
       ls_biz_obj-erzet    = sy-uzeit.
       ls_biz_obj-ernam    = sy-uname.
+      ls_biz_obj-aedat    = sy-datum.
+      ls_biz_obj-aezet    = sy-uzeit.
+      ls_biz_obj-aenam    = sy-uname.
 
       APPEND ls_biz_obj TO zbp_i_biz_obj_r=>gt_bo_create.
 
-      " Noti success to Fiori
+      "6. Noti success to Fiori
       APPEND VALUE #( %cid = ls_entity-%cid
                       BoId = lv_bo_id ) TO mapped-bizobj.
 
       APPEND VALUE #( %cid = ls_entity-%cid
-                      %msg = new_message_with_text(
-                               severity = if_abap_behv_message=>severity-success
-                               text     = |Business Object '{ ls_entity-BoId }' has been added to creation queue.| )
+                      %msg = new_message(
+                               id       = 'YGSP26SAP20_MSG'
+                               number   = '036'
+                               severity = if_abap_behv_message=>severity-success )
                     ) TO reported-bizobj.
     ENDLOOP.
   ENDMETHOD.
@@ -139,17 +199,40 @@ CLASS lhc_BizObj IMPLEMENTATION.
   ENDMETHOD.
   "BÌnh
   METHOD delete.
-    DATA: ls_bo_del TYPE zsap20_biz_obj.
+    DATA: ls_bo_del   TYPE zsap20_biz_obj,
+          lv_has_link TYPE abap_bool.
 
     LOOP AT keys INTO DATA(ls_key).
-      " Bring BO want del to buffer
+      " 1. Prevent deletion if linked to attachments
+      CLEAR lv_has_link.
+      SELECT SINGLE @abap_true
+        FROM zsap20_bo_att_lk
+        WHERE bo_id = @ls_key-BoId
+        INTO @lv_has_link.
+
+      " If found link -> can't delete
+      IF sy-subrc = 0.
+        APPEND VALUE #( %tky = ls_key-%tky ) TO failed-bizobj.
+        APPEND VALUE #(
+            %tky = ls_key-%tky
+            %msg = new_message(
+                     id         = 'YGSP26SAP20_MSG'
+                     number     = '031'
+                     severity   = if_abap_behv_message=>severity-error )
+
+        ) TO reported-bizobj.
+        CONTINUE. " Skip this record, no push to buffer
+      ENDIF.
+
+      " 2. Bring BO want delete to buffer
       ls_bo_del-bo_id = ls_key-BoId.
       APPEND ls_bo_del TO zbp_i_biz_obj_r=>gt_bo_delete.
 
       APPEND VALUE #( %tky = ls_key-%tky
-                      %msg = new_message_with_text(
-                             severity = if_abap_behv_message=>severity-success
-                             text     = |Business Object '{ ls_key-BoId } to delete queue'| )
+                      %msg = new_message(
+                             id         = 'YGSP26SAP20_MSG'
+                             number     = '032'
+                             severity   = if_abap_behv_message=>severity-success )
                     ) TO reported-bizobj.
     ENDLOOP.
   ENDMETHOD.
@@ -260,9 +343,10 @@ CLASS lhc_BizObj IMPLEMENTATION.
       IF lv_file_id IS INITIAL.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-bizobj.
         APPEND VALUE #( %tky = ls_key-%tky
-                        %msg = new_message_with_text(
-                                severity = if_abap_behv_message=>severity-error
-                                text     = 'Please enter File ID')
+                        %msg = new_message(
+                                id         = 'YGSP26SAP20_MSG'
+                                number     = '033'
+                                severity = if_abap_behv_message=>severity-error )
                       ) TO reported-bizobj.
         CONTINUE.
       ENDIF.
@@ -293,9 +377,11 @@ CLASS lhc_BizObj IMPLEMENTATION.
       IF sy-subrc <> 0.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-bizobj.
         APPEND VALUE #( %tky = ls_key-%tky
-                        %msg = new_message_with_text(
-                                severity = if_abap_behv_message=>severity-error
-                                text     = |File '{ lv_file_id }' is not exists or has been removed.| )
+                        %msg = new_message(
+                                id         = 'YGSP26SAP20_MSG'
+                                number     = '034'
+                                severity   = if_abap_behv_message=>severity-error
+                                v1         = lv_file_id )
                       ) TO reported-bizobj.
         CONTINUE.
       ENDIF.
@@ -314,9 +400,10 @@ CLASS lhc_BizObj IMPLEMENTATION.
       IF lv_link_exists = abap_true OR lv_in_buffer = abap_true.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-bizobj.
         APPEND VALUE #( %tky = ls_key-%tky
-                        %msg = new_message_with_text(
-                                severity = if_abap_behv_message=>severity-warning
-                                text     = |This Business Object has been link to this File before!| )
+                        %msg = new_message(
+                                id         = 'YGSP26SAP20_MSG'
+                                number     = '035'
+                                severity   = if_abap_behv_message=>severity-warning )
                   ) TO reported-bizobj.
         CONTINUE.
       ENDIF.
@@ -331,14 +418,21 @@ CLASS lhc_BizObj IMPLEMENTATION.
 
       APPEND ls_link_db TO zbp_i_biz_obj_r=>gt_link_buffer.
 
+      " 5.1 Update BO last modified time
+      UPDATE zsap20_biz_obj
+        SET aedat = @sy-datum,
+            aezet = @sy-uzeit,
+            aenam = @sy-uname
+        WHERE bo_id = @ls_key-BoId.
       " 6. Return
       APPEND VALUE #( %tky        = ls_key-%tky
                       %param-%tky = ls_key-%tky ) TO result.
 
       APPEND VALUE #( %tky = ls_key-%tky
-                      %msg = new_message_with_text(
-                               severity = if_abap_behv_message=>severity-success
-                               text     = |Action has been add to queue!| )
+                      %msg = new_message(
+                               id       = 'YGSP26SAP20_MSG'
+                               number   = '036'
+                               severity = if_abap_behv_message=>severity-success )
                     ) TO reported-bizobj.
     ENDLOOP.
   ENDMETHOD.
@@ -387,9 +481,10 @@ CLASS lhc_AttBizLk IMPLEMENTATION.
         APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-attbizlk.
         APPEND VALUE #(
           %cid = ls_entity-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'BoId and FileId must not be empty.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '037'
+                   severity = if_abap_behv_message=>severity-error )
         ) TO reported-attbizlk.
         CONTINUE.
       ENDIF.
@@ -422,9 +517,11 @@ CLASS lhc_AttBizLk IMPLEMENTATION.
         APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-attbizlk.
         APPEND VALUE #(
           %cid = ls_entity-%cid
-          %msg = new_message_with_text(
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '038'
                    severity = if_abap_behv_message=>severity-error
-                   text     = |Business Object '{ ls_entity-BoId }' does not exist.| )
+                   v1       = ( ls_entity-BoId ) )
         ) TO reported-attbizlk.
         CONTINUE.
       ENDIF.
@@ -441,9 +538,11 @@ CLASS lhc_AttBizLk IMPLEMENTATION.
         APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-attbizlk.
         APPEND VALUE #(
           %cid = ls_entity-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = |File '{ ls_entity-FileId }' does not exist or has been removed.| )
+          %msg = new_message(
+                                id         = 'YGSP26SAP20_MSG'
+                                number     = '034'
+                                severity   = if_abap_behv_message=>severity-error
+                                v1         = ls_entity-FileId )
         ) TO reported-attbizlk.
         CONTINUE.
       ENDIF.
@@ -468,9 +567,10 @@ CLASS lhc_AttBizLk IMPLEMENTATION.
         APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-attbizlk.
         APPEND VALUE #(
           %cid = ls_entity-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-warning
-                   text     = |This link already exists.| )
+          %msg = new_message(
+                                id         = 'YGSP26SAP20_MSG'
+                                number     = '035'
+                                severity   = if_abap_behv_message=>severity-warning )
         ) TO reported-attbizlk.
         CONTINUE.
       ENDIF.
@@ -494,9 +594,10 @@ CLASS lhc_AttBizLk IMPLEMENTATION.
 
       APPEND VALUE #(
         %cid = ls_entity-%cid
-        %msg = new_message_with_text(
-                 severity = if_abap_behv_message=>severity-success
-                 text     = |Link has been added to queue successfully.| )
+        %msg = new_message(
+                 id       = 'YGSP26SAP20_MSG'
+                 number   = '036'
+                 severity = if_abap_behv_message=>severity-success )
       ) TO reported-attbizlk.
 
     ENDLOOP.

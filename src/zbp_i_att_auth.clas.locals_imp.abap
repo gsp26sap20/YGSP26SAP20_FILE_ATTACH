@@ -1,3 +1,11 @@
+CLASS lcl_buffer DEFINITION.
+  PUBLIC SECTION.
+    TYPES: tt_auth TYPE STANDARD TABLE OF zsap20_att_auth.
+    CLASS-DATA: mt_create TYPE tt_auth,
+                mt_update TYPE tt_auth,
+                mt_delete TYPE tt_auth.
+ENDCLASS.
+
 CLASS lhc_Z_I_ATT_AUTH DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
 
@@ -22,10 +30,6 @@ CLASS lhc_Z_I_ATT_AUTH DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS is_admin
       RETURNING VALUE(rv_is_admin) TYPE abap_bool.
 
-    METHODS is_valid_role
-      IMPORTING iv_role         TYPE zsap20_att_auth-role
-      RETURNING VALUE(rv_valid) TYPE abap_bool.
-
 ENDCLASS.
 
 CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
@@ -41,18 +45,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
       INTO @lv_role
       WHERE uname = @sy-uname.
 
-    IF sy-subrc = 0 AND lv_role = 'ADMIN'.
-      rv_is_admin = abap_true.
-    ELSE.
-      rv_is_admin = abap_false.
-    ENDIF.
-
-  ENDMETHOD.
-
-
-  METHOD is_valid_role.
-
-    rv_valid = xsdbool( iv_role = 'ADMIN' OR iv_role = 'USER' ).
+    rv_is_admin = xsdbool( sy-subrc = 0 AND lv_role = 'ADMIN' ).
 
   ENDMETHOD.
 
@@ -83,15 +76,18 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
 
   METHOD create.
 
+    DATA ls_auth_db TYPE zsap20_att_auth.
+
     IF is_admin( ) <> abap_true.
 
       LOOP AT entities INTO DATA(ls_create_denied).
         APPEND VALUE #( %cid = ls_create_denied-%cid ) TO failed-auth.
         APPEND VALUE #(
           %cid = ls_create_denied-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Only ADMIN can create authorization users.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '043'
+                   severity = if_abap_behv_message=>severity-error )
         ) TO reported-auth.
       ENDLOOP.
 
@@ -99,29 +95,29 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
 
     ENDIF.
 
-    DATA ls_auth_db TYPE zsap20_att_auth.
-
     LOOP AT entities INTO DATA(ls_create).
 
       IF ls_create-Uname IS INITIAL.
         APPEND VALUE #( %cid = ls_create-%cid ) TO failed-auth.
         APPEND VALUE #(
           %cid = ls_create-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Username is required.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '044'
+                   severity = if_abap_behv_message=>severity-error )
           %element-Uname = if_abap_behv=>mk-on
         ) TO reported-auth.
         CONTINUE.
       ENDIF.
 
-      IF is_valid_role( ls_create-Role ) <> abap_true.
+      IF ls_create-Role <> 'ADMIN'.
         APPEND VALUE #( %cid = ls_create-%cid ) TO failed-auth.
         APPEND VALUE #(
           %cid = ls_create-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Role must be ADMIN or USER.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '047'
+                   severity = if_abap_behv_message=>severity-error )
           %element-Role = if_abap_behv=>mk-on
         ) TO reported-auth.
         CONTINUE.
@@ -135,10 +131,12 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
       IF sy-subrc = 0.
         APPEND VALUE #( %cid = ls_create-%cid ) TO failed-auth.
         APPEND VALUE #(
-          %cid = ls_create-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = |User { ls_create-Uname } already exists.| )
+                        %cid = ls_create-%cid
+                        %msg = new_message(
+                               id       = 'YGSP26SAP20_MSG'
+                               number   = '045'
+                               severity = if_abap_behv_message=>severity-error
+                               v1       = ( ls_create-Uname ) )
         ) TO reported-auth.
         CONTINUE.
       ENDIF.
@@ -150,18 +148,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
       ls_auth_db-erdat = sy-datum.
       ls_auth_db-ernam = sy-uname.
 
-      INSERT zsap20_att_auth FROM @ls_auth_db.
-
-      IF sy-subrc <> 0.
-        APPEND VALUE #( %cid = ls_create-%cid ) TO failed-auth.
-        APPEND VALUE #(
-          %cid = ls_create-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = |Create failed for user { ls_create-Uname }.| )
-        ) TO reported-auth.
-        CONTINUE.
-      ENDIF.
+      APPEND ls_auth_db TO lcl_buffer=>mt_create.
 
       APPEND VALUE #(
         %cid  = ls_create-%cid
@@ -169,10 +156,11 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
       ) TO mapped-auth.
 
       APPEND VALUE #(
-        %cid = ls_create-%cid
-        %msg = new_message_with_text(
-                 severity = if_abap_behv_message=>severity-success
-                 text     = |Authorization for user { ls_create-Uname } created.| )
+                      %cid = ls_create-%cid
+                      %msg = new_message(
+                                id       = 'YGSP26SAP20_MSG'
+                                number   = '036'
+                                severity = if_abap_behv_message=>severity-success )
       ) TO reported-auth.
 
     ENDLOOP.
@@ -181,61 +169,6 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
 
 
   METHOD update.
-
-    IF is_admin( ) <> abap_true.
-
-      LOOP AT entities INTO DATA(ls_update_denied).
-        APPEND VALUE #( %tky = ls_update_denied-%tky ) TO failed-auth.
-        APPEND VALUE #(
-          %tky = ls_update_denied-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Only ADMIN can update authorization users.' )
-        ) TO reported-auth.
-      ENDLOOP.
-
-      RETURN.
-
-    ENDIF.
-
-    LOOP AT entities INTO DATA(ls_update).
-
-      IF is_valid_role( ls_update-Role ) <> abap_true.
-        APPEND VALUE #( %tky = ls_update-%tky ) TO failed-auth.
-        APPEND VALUE #(
-          %tky = ls_update-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Role must be ADMIN or USER.' )
-          %element-Role = if_abap_behv=>mk-on
-        ) TO reported-auth.
-        CONTINUE.
-      ENDIF.
-
-      UPDATE zsap20_att_auth
-        SET role = @ls_update-Role
-        WHERE uname = @ls_update-Uname.
-
-      IF sy-subrc <> 0.
-        APPEND VALUE #( %tky = ls_update-%tky ) TO failed-auth.
-        APPEND VALUE #(
-          %tky = ls_update-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = |User { ls_update-Uname } not found.| )
-        ) TO reported-auth.
-        CONTINUE.
-      ENDIF.
-
-      APPEND VALUE #(
-        %tky = ls_update-%tky
-        %msg = new_message_with_text(
-                 severity = if_abap_behv_message=>severity-success
-                 text     = |Role of user { ls_update-Uname } updated to { ls_update-Role }.| )
-      ) TO reported-auth.
-
-    ENDLOOP.
-
   ENDMETHOD.
 
 
@@ -247,9 +180,10 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
         APPEND VALUE #( %tky = ls_delete_denied-%tky ) TO failed-auth.
         APPEND VALUE #(
           %tky = ls_delete_denied-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Only ADMIN can delete authorization users.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '043'
+                   severity = if_abap_behv_message=>severity-error )
         ) TO reported-auth.
       ENDLOOP.
 
@@ -259,25 +193,46 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
 
     LOOP AT keys INTO DATA(ls_delete).
 
-      DELETE FROM zsap20_att_auth
-        WHERE uname = @ls_delete-Uname.
-
-      IF sy-subrc <> 0.
+      IF ls_delete-Uname = sy-uname.
         APPEND VALUE #( %tky = ls_delete-%tky ) TO failed-auth.
         APPEND VALUE #(
           %tky = ls_delete-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = |User { ls_delete-Uname } not found.| )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '048'
+                   severity = if_abap_behv_message=>severity-error )
         ) TO reported-auth.
         CONTINUE.
       ENDIF.
 
+      SELECT SINGLE @abap_true
+        FROM zsap20_att_auth
+        WHERE uname = @ls_delete-Uname
+        INTO @DATA(lv_exists_delete).
+
+      IF sy-subrc <> 0.
+        APPEND VALUE #( %tky = ls_delete-%tky ) TO failed-auth.
+        APPEND VALUE #(
+                        %tky = ls_delete-%tky
+                        %msg = new_message(
+                                id       = 'YGSP26SAP20_MSG'
+                                number   = '046'
+                                severity = if_abap_behv_message=>severity-error
+                                v1       = ( ls_delete-Uname ) )
+        ) TO reported-auth.
+        CONTINUE.
+      ENDIF.
+
+      DATA ls_auth_delete TYPE zsap20_att_auth.
+      ls_auth_delete-uname = ls_delete-Uname.
+      APPEND ls_auth_delete TO lcl_buffer=>mt_delete.
+
       APPEND VALUE #(
-        %tky = ls_delete-%tky
-        %msg = new_message_with_text(
-                 severity = if_abap_behv_message=>severity-success
-                 text     = |Authorization of user { ls_delete-Uname } deleted.| )
+                      %tky = ls_delete-%tky
+                      %msg = new_message(
+                              id       = 'YGSP26SAP20_MSG'
+                              number   = '036'
+                              severity = if_abap_behv_message=>severity-success )
       ) TO reported-auth.
 
     ENDLOOP.
@@ -290,6 +245,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
     IF is_admin( ) <> abap_true.
       RETURN.
     ENDIF.
+
     IF keys IS INITIAL.
       RETURN.
     ENDIF.
@@ -312,17 +268,14 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
 
 ENDCLASS.
 
+
 CLASS lsc_Z_I_ATT_AUTH DEFINITION INHERITING FROM cl_abap_behavior_saver.
   PROTECTED SECTION.
 
     METHODS finalize REDEFINITION.
-
     METHODS check_before_save REDEFINITION.
-
     METHODS save REDEFINITION.
-
     METHODS cleanup REDEFINITION.
-
     METHODS cleanup_finalize REDEFINITION.
 
 ENDCLASS.
@@ -336,9 +289,23 @@ CLASS lsc_Z_I_ATT_AUTH IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD save.
+
+    IF lcl_buffer=>mt_create IS NOT INITIAL.
+      INSERT zsap20_att_auth FROM TABLE @lcl_buffer=>mt_create.
+    ENDIF.
+
+    IF lcl_buffer=>mt_delete IS NOT INITIAL.
+      LOOP AT lcl_buffer=>mt_delete INTO DATA(ls_delete).
+        DELETE FROM zsap20_att_auth
+          WHERE uname = @ls_delete-uname.
+      ENDLOOP.
+    ENDIF.
+
   ENDMETHOD.
 
   METHOD cleanup.
+    CLEAR: lcl_buffer=>mt_create,
+           lcl_buffer=>mt_delete.
   ENDMETHOD.
 
   METHOD cleanup_finalize.
