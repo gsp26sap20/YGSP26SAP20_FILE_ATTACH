@@ -19,7 +19,7 @@ define behavior for Z_C_BIZ_OBJ alias BizObj
   use delete;
 
   use association _Links;
-  use action link_attachment;
+//  use action link_attachment;
 }
 
 define behavior for Z_C_BO_ATT_LK alias AttBizLk

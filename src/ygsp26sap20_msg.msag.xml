@@ -380,6 +380,12 @@
      <MSGNR>062</MSGNR>
      <TEXT>Version &amp;1 uploaded.</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>063</MSGNR>
+     <TEXT>Action successfully for &amp;1!</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

@@ -3,8 +3,8 @@
 {
 "FROM":
 [
-"Z_I_CURR_ADMIN",
-"ZSAP20_ATT_CFG"
+"Z_I_ATT_CFG",
+"Z_I_CURR_ADMIN"
 ],
 "ASSOCIATED":
 [],

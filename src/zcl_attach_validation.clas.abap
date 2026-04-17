@@ -13,17 +13,10 @@ CLASS zcl_attach_validation DEFINITION
     CLASS-METHODS check_title
       IMPORTING iv_title TYPE string.
 
-*    CLASS-METHODS check_extension
-*      IMPORTING iv_extension TYPE string.
-*
-*    CLASS-METHODS check_mime_type
-*      IMPORTING iv_extension TYPE string
-*                iv_mime_type TYPE string.
-*
-*    CLASS-METHODS check_file_size
-*      IMPORTING keys     TYPE tt_versions_keys
-*      CHANGING  failed   TYPE tt_versions_failed
-*                reported TYPE tt_versions_reported.
+    CLASS-METHODS check_file_name
+      IMPORTING iv_file_name         TYPE string
+      RETURNING VALUE(rv_error_text) TYPE string.
+
     CLASS-METHODS check_extension
       IMPORTING iv_extension         TYPE string
       RETURNING VALUE(rv_error_text) TYPE string.
@@ -32,11 +25,6 @@ CLASS zcl_attach_validation DEFINITION
       IMPORTING iv_extension         TYPE string
                 iv_mime_type         TYPE string
       RETURNING VALUE(rv_error_text) TYPE string.
-
-    CLASS-METHODS check_file_size
-      IMPORTING keys     TYPE tt_versions_keys
-      CHANGING  failed   TYPE tt_versions_failed
-                reported TYPE tt_versions_reported.
 
     CLASS-METHODS get_file_size_error
       IMPORTING iv_extension         TYPE string
@@ -80,7 +68,8 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     DATA lv_title TYPE string.
 
     lv_title = iv_title.
-    CONDENSE lv_title.
+    SHIFT lv_title LEFT DELETING LEADING space.
+    SHIFT lv_title RIGHT DELETING TRAILING space.
 
     IF lv_title IS INITIAL.
       RAISE EXCEPTION TYPE zcx_attach_validation
@@ -95,6 +84,70 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+  METHOD check_file_name.
+    DATA: lv_name    TYPE string,
+          lv_trimmed TYPE string.
+
+    CLEAR rv_error_text.
+
+    lv_name = iv_file_name.
+
+    IF lv_name IS INITIAL.
+      rv_error_text = 'File name cannot be empty.'.
+      RETURN.
+    ENDIF.
+
+    lv_trimmed = lv_name.
+    SHIFT lv_trimmed LEFT DELETING LEADING space.
+    SHIFT lv_trimmed RIGHT DELETING TRAILING space.
+
+    IF lv_name <> lv_trimmed.
+      rv_error_text = 'File name cannot start or end with spaces.'.
+      RETURN.
+    ENDIF.
+
+    IF lv_name = '.' OR lv_name = '..'.
+      rv_error_text = 'File name cannot be "." or "..".'.
+      RETURN.
+    ENDIF.
+
+    DATA lv_last_index TYPE i.
+    DATA lv_last_char  TYPE c LENGTH 1.
+
+    lv_last_index = strlen( lv_name ) - 1.
+    lv_last_char = lv_name+lv_last_index(1).
+
+    IF lv_last_char = '.'.
+      rv_error_text = 'File name cannot end with a period.'.
+      RETURN.
+    ENDIF.
+
+    IF strlen( lv_name ) > 255.
+      rv_error_text = 'File name cannot exceed 255 characters.'.
+      RETURN.
+    ENDIF.
+
+    DATA lo_matcher TYPE REF TO cl_abap_matcher.
+
+lo_matcher = cl_abap_matcher=>create_pcre(
+  pattern = '[<>:"/\\|?*\x00-\x1F]'
+  text    = lv_name ).
+
+IF lo_matcher->match( ) = abap_true.
+  rv_error_text = 'File name contains invalid characters.'.
+  RETURN.
+ENDIF.
+
+lo_matcher = cl_abap_matcher=>create_pcre(
+  pattern     = '^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$'
+  text        = lv_name
+  ignore_case = abap_true ).
+
+IF lo_matcher->match( ) = abap_true.
+  rv_error_text = 'File name uses a reserved system name.'.
+  RETURN.
+ENDIF.
+  ENDMETHOD.
 
   METHOD check_extension.
     DATA lv_ext TYPE string.
@@ -104,16 +157,15 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     lv_ext = zcl_attach_config=>normalize_extension( iv_extension ).
 
     IF lv_ext IS INITIAL.
-      rv_error_text = 'FILE_EXTENSION must not be empty.'.
+      rv_error_text = 'File extension must not be empty.'.
       RETURN.
     ENDIF.
 
-    IF zcl_attach_config=>is_extension_allowed( lv_ext ) = abap_false.
-      rv_error_text = 'Unsupported file extension.'.
+    IF zcl_attach_config=>is_valid_extension_format( lv_ext ) <> abap_true.
+      rv_error_text = 'File extension format is invalid.'.
       RETURN.
     ENDIF.
   ENDMETHOD.
-
 
   METHOD check_mime_type.
     DATA lv_ext  TYPE string.
@@ -126,12 +178,17 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     lv_mime = zcl_attach_config=>normalize_mime_type( iv_mime_type ).
 
     IF lv_ext IS INITIAL.
-      rv_error_text = 'FILE_EXTENSION must not be empty.'.
+      rv_error_text = 'File extension must not be empty.'.
       RETURN.
     ENDIF.
 
     IF lv_mime IS INITIAL.
-      rv_error_text = 'MIME_TYPE must not be empty.'.
+      rv_error_text = 'MIME type must not be empty.'.
+      RETURN.
+    ENDIF.
+
+    IF zcl_attach_config=>is_valid_mime_format( lv_mime ) <> abap_true.
+      rv_error_text = 'MIME type format is invalid.'.
       RETURN.
     ENDIF.
 
@@ -140,75 +197,9 @@ CLASS zcl_attach_validation IMPLEMENTATION.
                    iv_extension = lv_ext
                    iv_mime_type = lv_mime ).
       CATCH zcx_attach_validation.
-        rv_error_text = 'Unsupported MIME type for file extension.'.
+        rv_error_text = 'MIME type is not allowed for this file extension.'.
         RETURN.
     ENDTRY.
-  ENDMETHOD.
-
-  METHOD check_file_size.
-
-    CONSTANTS c_state_area TYPE string VALUE 'VALIDATE_SIZE'.
-
-    DATA lv_max_bytes TYPE i.
-    DATA lv_ext       TYPE string.
-    DATA lv_mime      TYPE string.
-    DATA lv_error     TYPE string.
-
-    READ ENTITIES OF z_i_attach_r IN LOCAL MODE
-      ENTITY z_i_attach_r BY \_Versions
-        FIELDS ( FileSize FileExtension MimeType )
-        WITH CORRESPONDING #( keys )
-        RESULT DATA(lt_versions).
-
-    LOOP AT lt_versions INTO DATA(ls_ver).
-
-      CLEAR: lv_max_bytes, lv_ext, lv_mime, lv_error.
-
-      lv_ext  = ls_ver-FileExtension.
-      lv_mime = ls_ver-MimeType.
-
-      APPEND VALUE #(
-        %tky        = ls_ver-%tky
-        %state_area = c_state_area
-      ) TO reported.
-
-      lv_error = check_extension( lv_ext ).
-      IF lv_error IS NOT INITIAL.
-        APPEND VALUE #(
-          %tky = ls_ver-%tky
-        ) TO failed.
-        CONTINUE.
-      ENDIF.
-
-      lv_error = check_mime_type(
-                   iv_extension = lv_ext
-                   iv_mime_type = lv_mime ).
-      IF lv_error IS NOT INITIAL.
-        APPEND VALUE #(
-          %tky = ls_ver-%tky
-        ) TO failed.
-        CONTINUE.
-      ENDIF.
-
-      TRY.
-          lv_max_bytes = zcl_attach_config=>get_max_bytes(
-                           iv_extension = lv_ext
-                           iv_mime_type = lv_mime ).
-
-          IF lv_max_bytes <= 0 OR ls_ver-FileSize > lv_max_bytes.
-            APPEND VALUE #(
-              %tky = ls_ver-%tky
-            ) TO failed.
-          ENDIF.
-
-        CATCH zcx_attach_validation.
-          APPEND VALUE #(
-            %tky = ls_ver-%tky
-          ) TO failed.
-      ENDTRY.
-
-    ENDLOOP.
-
   ENDMETHOD.
 
   METHOD get_file_size_error.
@@ -228,6 +219,11 @@ CLASS zcl_attach_validation IMPLEMENTATION.
                  iv_mime_type = iv_mime_type ).
     IF lv_error IS NOT INITIAL.
       rv_error_text = lv_error.
+      RETURN.
+    ENDIF.
+
+    IF iv_file_size <= 0.
+      rv_error_text = 'File size must be greater than 0.'.
       RETURN.
     ENDIF.
 
@@ -251,7 +247,6 @@ CLASS zcl_attach_validation IMPLEMENTATION.
         RETURN.
     ENDTRY.
   ENDMETHOD.
-
 
   METHOD check_file_content.
 
@@ -371,11 +366,7 @@ CLASS zcl_attach_validation IMPLEMENTATION.
 
   METHOD check_latest_version_type.
 
-    DATA: lv_new_ext     TYPE string,
-          lv_new_mime    TYPE string,
-          lv_new_type    TYPE zsap20_att_cfg-type,
-          lv_last_ext    TYPE string,
-          lv_last_mime   TYPE string,
+    DATA: lv_new_type    TYPE zsap20_att_cfg-type,
           lv_last_type   TYPE zsap20_att_cfg-type,
           lv_current_ver TYPE zgsp26sap20_verno,
           ls_last_ver    TYPE zsap20_file_ver.
@@ -386,23 +377,16 @@ CLASS zcl_attach_validation IMPLEMENTATION.
           iv_text = 'File ID must not be empty.'.
     ENDIF.
 
-    " Normalize uploaded file info
-    lv_new_ext  = zcl_attach_config=>normalize_extension( iv_extension ).
-    lv_new_mime = zcl_attach_config=>normalize_mime_type( iv_mime_type ).
-
-    " Get current version from attachment master
     SELECT SINGLE current_version
       FROM zsap20_file_mgmt
       INTO @lv_current_ver
       WHERE file_id   = @iv_file_id
         AND is_active = @abap_true.
 
-    " No previous version -> skip check
     IF sy-subrc <> 0 OR lv_current_ver IS INITIAL.
       RETURN.
     ENDIF.
 
-    " Get latest version record
     SELECT SINGLE *
       FROM zsap20_file_ver
       INTO @ls_last_ver
@@ -413,42 +397,26 @@ CLASS zcl_attach_validation IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Normalize latest version file info
-    lv_last_ext = zcl_attach_config=>normalize_extension(
-                    CONV string( ls_last_ver-file_extension ) ).
+    TRY.
+        lv_new_type = zcl_attach_config=>get_type_by_ext_and_mime(
+                        iv_extension = iv_extension
+                        iv_mime_type = iv_mime_type ).
+      CATCH zcx_attach_validation.
+        RAISE EXCEPTION TYPE zcx_attach_validation
+          EXPORTING
+            iv_text = 'No active configuration found for uploaded file type.'.
+    ENDTRY.
 
-    lv_last_mime = zcl_attach_config=>normalize_mime_type(
-                     CONV string( ls_last_ver-mime_type ) ).
+    TRY.
+        lv_last_type = zcl_attach_config=>get_type_by_ext_and_mime(
+                         iv_extension = CONV string( ls_last_ver-file_extension )
+                         iv_mime_type = CONV string( ls_last_ver-mime_type ) ).
+      CATCH zcx_attach_validation.
+        RAISE EXCEPTION TYPE zcx_attach_validation
+          EXPORTING
+            iv_text = 'No active configuration found for latest version file type.'.
+    ENDTRY.
 
-    " Get type of uploaded file from config
-    SELECT SINGLE type
-      FROM zsap20_att_cfg
-      INTO @lv_new_type
-      WHERE file_ext  = @lv_new_ext
-        AND mime_type = @lv_new_mime
-        AND is_active = 'X'.
-
-    IF sy-subrc <> 0 OR lv_new_type IS INITIAL.
-      RAISE EXCEPTION TYPE zcx_attach_validation
-        EXPORTING
-          iv_text = 'No active configuration found for uploaded file type.'.
-    ENDIF.
-
-    " Get type of latest version from config
-    SELECT SINGLE type
-      FROM zsap20_att_cfg
-      INTO @lv_last_type
-      WHERE file_ext  = @lv_last_ext
-        AND mime_type = @lv_last_mime
-        AND is_active = 'X'.
-
-    IF sy-subrc <> 0 OR lv_last_type IS INITIAL.
-      RAISE EXCEPTION TYPE zcx_attach_validation
-        EXPORTING
-          iv_text = 'No active configuration found for latest version file type.'.
-    ENDIF.
-
-    " Reject if type is different
     IF lv_new_type <> lv_last_type.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING

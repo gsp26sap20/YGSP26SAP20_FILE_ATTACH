@@ -3,5 +3,4 @@ define service ZUI_BIZOBJ_SRV {
   expose Z_C_BIZ_OBJ as BizObject;
   expose Z_C_BO_ATT_LK as BizObjectAttachmentLink;
   expose Z_C_ATTACH as Attachment;
-  expose Z_C_ATTACH_VER as AttachmentVersion;
 }

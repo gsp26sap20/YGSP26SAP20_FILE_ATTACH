@@ -17,7 +17,7 @@ define behavior for Z_C_ATTACH //alias <alias_name>
   use action Reactivate;
 //  use action upload_new_version;
 //  use action upload_att_ver;
-  use action LinkToBO;
+//  use action LinkToBO;
 
 
 }

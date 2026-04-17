@@ -6,17 +6,17 @@ lock master
 authorization master ( instance )
 {
   create;
-  update;
-  delete;
+  update( features : instance );
+  delete( features : instance );
 
   association _Links;
 
   //  action ( features : instance ) link_attachment
   //    parameter ZATT_LINK_PARAM
   //    result [1] $self;
-  action ( features : instance ) link_attachment
-    parameter Z_A_LINK_ATT_P
-    result [1] $self;
+//  action ( features : instance ) link_attachment
+//    parameter Z_A_LINK_ATT_P
+//    result [1] $self;
 
 }
 

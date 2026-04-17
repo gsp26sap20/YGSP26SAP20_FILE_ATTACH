@@ -39,9 +39,9 @@ authorization master ( global, instance )
   //  action ( features : instance ) link_to_bo
   //    parameter ZATT_LINK_PARAM
   //    result [1] $self;
-  action ( features : instance ) LinkToBO
-    parameter Z_A_LINK_BO_P
-    result [1] $self;
+    //  action ( features : instance ) LinkToBO
+    //    parameter Z_A_LINK_BO_P
+    //    result [1] $self;
 
   //  action ( features : instance ) upload_att_ver
   //    parameter ZATT_UPLOAD_PARAM
