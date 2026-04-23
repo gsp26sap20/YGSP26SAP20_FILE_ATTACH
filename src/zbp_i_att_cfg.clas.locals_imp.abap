@@ -1,6 +1,10 @@
 CLASS lhc_AttCfg DEFINITION INHERITING FROM cl_abap_behavior_handler.
-  PRIVATE SECTION.
+  PUBLIC SECTION.
+    CLASS-DATA:
+      gt_create_buffer TYPE STANDARD TABLE OF zsap20_att_cfg WITH DEFAULT KEY,
+      gt_update_buffer TYPE STANDARD TABLE OF zsap20_att_cfg WITH DEFAULT KEY.
 
+  PRIVATE SECTION.
     CONSTANTS:
       lc_max_10mb TYPE i VALUE 10485760.
 
@@ -33,12 +37,10 @@ CLASS lhc_AttCfg DEFINITION INHERITING FROM cl_abap_behavior_handler.
       RETURNING VALUE(rv_ok) TYPE abap_bool.
 
     METHODS is_valid_extension
-      IMPORTING iv_file_ext TYPE zsap20_att_cfg-file_ext
+      IMPORTING iv_file_ext  TYPE zsap20_att_cfg-file_ext
       RETURNING VALUE(rv_ok) TYPE abap_bool.
 
 ENDCLASS.
-
-
 
 CLASS lhc_AttCfg IMPLEMENTATION.
 
@@ -56,8 +58,7 @@ CLASS lhc_AttCfg IMPLEMENTATION.
 
     rv_ok = abap_false.
 
-    lt_tokens = zcl_attach_config=>split_mime_types(
-                  CONV string( iv_mime_type ) ).
+    lt_tokens = zcl_attach_config=>split_mime_types( CONV string( iv_mime_type ) ).
 
     IF lt_tokens IS INITIAL.
       RETURN.
@@ -73,8 +74,7 @@ CLASS lhc_AttCfg IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD is_valid_extension.
-    rv_ok = zcl_attach_config=>is_valid_extension_format(
-              CONV string( iv_file_ext ) ).
+    rv_ok = zcl_attach_config=>is_valid_extension_format( CONV string( iv_file_ext ) ).
   ENDMETHOD.
 
   METHOD get_instance_authorizations.
@@ -118,77 +118,98 @@ CLASS lhc_AttCfg IMPLEMENTATION.
   METHOD create.
 
     IF is_admin( ) <> abap_true.
-
       LOOP AT entities INTO DATA(ls_denied).
         APPEND VALUE #( %cid = ls_denied-%cid ) TO failed-attcfg.
-
         APPEND VALUE #(
           %cid = ls_denied-%cid
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '012'
+                   number   = '004'
                    severity = if_abap_behv_message=>severity-error )
         ) TO reported-attcfg.
       ENDLOOP.
-
       RETURN.
     ENDIF.
 
     LOOP AT entities INTO DATA(ls_create).
 
-      ls_create-FileExt = zcl_attach_config=>normalize_extension(
-                            CONV string( ls_create-FileExt ) ).
+      DATA: lv_file_ext    TYPE zsap20_att_cfg-file_ext,
+            lv_mime_type   TYPE zsap20_att_cfg-mime_type,
+            lv_description TYPE string,
+            ls_db          TYPE zsap20_att_cfg.
 
-      ls_create-MimeType = zcl_attach_config=>normalize_mime_type_list(
-                             CONV string( ls_create-MimeType ) ).
+      lv_file_ext = zcl_attach_config=>normalize_extension( CONV string( ls_create-FileExt ) ).
+      lv_mime_type = zcl_attach_config=>normalize_mime_type_list( CONV string( ls_create-MimeType ) ).
 
-      SHIFT ls_create-Description LEFT DELETING LEADING space.
-      SHIFT ls_create-Description RIGHT DELETING TRAILING space.
+      lv_description = CONV string( ls_create-Description ).
+      SHIFT lv_description LEFT DELETING LEADING space.
+      SHIFT lv_description RIGHT DELETING TRAILING space.
 
-      IF ls_create-FileExt IS INITIAL OR
-         ls_create-MimeType IS INITIAL OR
-         ls_create-Type IS INITIAL.
-
+      IF lv_file_ext IS INITIAL.
         APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
-
         APPEND VALUE #(
           %cid = ls_create-%cid
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '015'
+                   number   = '001'
+                   v1       = 'FileExt'
                    severity = if_abap_behv_message=>severity-error )
-        ) TO reported-attcfg.
-
-        CONTINUE.
-      ENDIF.
-
-      IF is_valid_extension( ls_create-FileExt ) <> abap_true.
-
-        APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
-
-        APPEND VALUE #(
-          %cid = ls_create-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'File extension format is invalid.' )
           %element-FileExt = if_abap_behv=>mk-on
         ) TO reported-attcfg.
-
         CONTINUE.
       ENDIF.
 
-      IF is_valid_mime_type( ls_create-MimeType ) <> abap_true.
-
+      IF lv_mime_type IS INITIAL.
         APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
-
         APPEND VALUE #(
           %cid = ls_create-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'One or more MIME types are invalid.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '001'
+                   v1       = 'MimeType'
+                   severity = if_abap_behv_message=>severity-error )
           %element-MimeType = if_abap_behv=>mk-on
         ) TO reported-attcfg.
+        CONTINUE.
+      ENDIF.
 
+      IF ls_create-Type IS INITIAL.
+        APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
+        APPEND VALUE #(
+          %cid = ls_create-%cid
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '001'
+                   v1       = 'Type'
+                   severity = if_abap_behv_message=>severity-error )
+          %element-Type = if_abap_behv=>mk-on
+        ) TO reported-attcfg.
+        CONTINUE.
+      ENDIF.
+
+      IF is_valid_extension( lv_file_ext ) <> abap_true.
+        APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
+        APPEND VALUE #(
+          %cid = ls_create-%cid
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '036'
+                   severity = if_abap_behv_message=>severity-error )
+          %element-FileExt = if_abap_behv=>mk-on
+        ) TO reported-attcfg.
+        CONTINUE.
+      ENDIF.
+
+      IF is_valid_mime_type( lv_mime_type ) <> abap_true.
+        APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
+        APPEND VALUE #(
+          %cid = ls_create-%cid
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '037'
+                   severity = if_abap_behv_message=>severity-error )
+          %element-MimeType = if_abap_behv=>mk-on
+        ) TO reported-attcfg.
         CONTINUE.
       ENDIF.
 
@@ -198,7 +219,7 @@ CLASS lhc_AttCfg IMPLEMENTATION.
           %cid = ls_create-%cid
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '017'
+                   number   = '031'
                    severity = if_abap_behv_message=>severity-error )
           %element-MaxBytes = if_abap_behv=>mk-on
         ) TO reported-attcfg.
@@ -211,20 +232,22 @@ CLASS lhc_AttCfg IMPLEMENTATION.
           %cid = ls_create-%cid
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '018'
+                   number   = '032'
                    severity = if_abap_behv_message=>severity-error )
           %element-MaxBytes = if_abap_behv=>mk-on
         ) TO reported-attcfg.
         CONTINUE.
       ENDIF.
 
-      IF ls_create-Description IS INITIAL.
+      IF lv_description IS INITIAL.
         APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
         APPEND VALUE #(
           %cid = ls_create-%cid
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'Description cannot be empty.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '002'
+                   v1       = 'Description'
+                   severity = if_abap_behv_message=>severity-error )
           %element-Description = if_abap_behv=>mk-on
         ) TO reported-attcfg.
         CONTINUE.
@@ -232,51 +255,64 @@ CLASS lhc_AttCfg IMPLEMENTATION.
 
       SELECT SINGLE @abap_true
         FROM zsap20_att_cfg
-        WHERE file_ext = @ls_create-FileExt
-        INTO @DATA(lv_exists).
+        WHERE file_ext = @lv_file_ext
+        INTO @DATA(lv_exists_db).
 
       IF sy-subrc = 0.
-
         APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
-
         APPEND VALUE #(
           %cid = ls_create-%cid
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '019'
-                   v1       = ls_create-FileExt
+                   number   = '033'
+                   v1       = lv_file_ext
                    severity = if_abap_behv_message=>severity-error )
         ) TO reported-attcfg.
-
         CONTINUE.
       ENDIF.
 
-      IF ls_create-IsActive IS INITIAL.
-        ls_create-IsActive = 'X'.
+      IF line_exists( gt_create_buffer[ file_ext = lv_file_ext ] ).
+        APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
+        APPEND VALUE #(
+          %cid = ls_create-%cid
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '033'
+                   v1       = lv_file_ext
+                   severity = if_abap_behv_message=>severity-error )
+        ) TO reported-attcfg.
+        CONTINUE.
       ENDIF.
 
-      DATA ls_db TYPE zsap20_att_cfg.
+      IF line_exists( gt_update_buffer[ file_ext = lv_file_ext ] ).
+        APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
+        APPEND VALUE #(
+          %cid = ls_create-%cid
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '033'
+                   v1       = lv_file_ext
+                   severity = if_abap_behv_message=>severity-error )
+        ) TO reported-attcfg.
+        CONTINUE.
+      ENDIF.
 
+      " 4. Push to Buffer
+      CLEAR ls_db.
       ls_db-mandt       = sy-mandt.
-      ls_db-file_ext    = ls_create-FileExt.
-      ls_db-mime_type   = ls_create-MimeType.
+      ls_db-file_ext    = lv_file_ext.
+      ls_db-mime_type   = lv_mime_type.
       ls_db-type        = ls_create-Type.
       ls_db-max_bytes   = ls_create-MaxBytes.
-      ls_db-is_active   = ls_create-IsActive.
-      ls_db-description = ls_create-Description.
+      ls_db-is_active   = COND #( WHEN ls_create-IsActive IS INITIAL THEN 'X' ELSE ls_create-IsActive ).
+      ls_db-description = lv_description.
 
-      INSERT zsap20_att_cfg FROM @ls_db.
+      APPEND ls_db TO gt_create_buffer.
 
-      IF sy-subrc <> 0.
-        APPEND VALUE #( %cid = ls_create-%cid ) TO failed-attcfg.
-        CONTINUE.
-      ENDIF.
-
-      zcl_attach_config=>reset_cache( ).
-
+      " 5. Map result
       APPEND VALUE #(
         %cid    = ls_create-%cid
-        FileExt = ls_create-FileExt
+        FileExt = lv_file_ext
       ) TO mapped-attcfg.
 
     ENDLOOP.
@@ -286,58 +322,67 @@ CLASS lhc_AttCfg IMPLEMENTATION.
   METHOD update.
 
     IF is_admin( ) <> abap_true.
+      LOOP AT entities INTO DATA(ls_denied).
+        APPEND VALUE #( %tky = ls_denied-%tky ) TO failed-attcfg.
+        APPEND VALUE #(
+          %tky = ls_denied-%tky
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '004'
+                   severity = if_abap_behv_message=>severity-error )
+        ) TO reported-attcfg.
+      ENDLOOP.
       RETURN.
     ENDIF.
 
     LOOP AT entities INTO DATA(ls_update).
 
+      DATA: ls_db   TYPE zsap20_att_cfg,
+            lv_mime TYPE string.
+
       IF ls_update-FileExt IS NOT INITIAL.
-        ls_update-FileExt = zcl_attach_config=>normalize_extension(
-                              CONV string( ls_update-FileExt ) ).
+        ls_update-FileExt = zcl_attach_config=>normalize_extension( CONV string( ls_update-FileExt ) ).
       ENDIF.
 
       IF ls_update-MimeType IS NOT INITIAL.
-        ls_update-MimeType = zcl_attach_config=>normalize_mime_type_list(
-                               CONV string( ls_update-MimeType ) ).
+        lv_mime = zcl_attach_config=>normalize_mime_type_list( CONV string( ls_update-MimeType ) ).
+        ls_update-MimeType = lv_mime.
       ENDIF.
 
-      IF ls_update-FileExt IS NOT INITIAL AND
-         is_valid_extension( ls_update-FileExt ) <> abap_true.
-
+      IF ls_update-FileExt IS NOT INITIAL AND is_valid_extension( ls_update-FileExt ) <> abap_true.
         APPEND VALUE #( %tky = ls_update-%tky ) TO failed-attcfg.
         APPEND VALUE #(
           %tky = ls_update-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'File extension format is invalid.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '036'
+                   severity = if_abap_behv_message=>severity-error )
           %element-FileExt = if_abap_behv=>mk-on
         ) TO reported-attcfg.
         CONTINUE.
       ENDIF.
 
-      IF ls_update-MimeType IS NOT INITIAL AND
-         is_valid_mime_type( ls_update-MimeType ) <> abap_true.
-
+      IF ls_update-MimeType IS NOT INITIAL AND is_valid_mime_type( ls_update-MimeType ) <> abap_true.
         APPEND VALUE #( %tky = ls_update-%tky ) TO failed-attcfg.
         APPEND VALUE #(
           %tky = ls_update-%tky
-          %msg = new_message_with_text(
-                   severity = if_abap_behv_message=>severity-error
-                   text     = 'One or more MIME types are invalid.' )
+          %msg = new_message(
+                   id       = 'YGSP26SAP20_MSG'
+                   number   = '094'
+                   severity = if_abap_behv_message=>severity-error )
           %element-MimeType = if_abap_behv=>mk-on
         ) TO reported-attcfg.
         CONTINUE.
       ENDIF.
 
       IF ls_update-MaxBytes IS NOT INITIAL.
-
         IF ls_update-MaxBytes <= 0.
           APPEND VALUE #( %tky = ls_update-%tky ) TO failed-attcfg.
           APPEND VALUE #(
             %tky = ls_update-%tky
             %msg = new_message(
                      id       = 'YGSP26SAP20_MSG'
-                     number   = '017'
+                     number   = '031'
                      severity = if_abap_behv_message=>severity-error )
             %element-MaxBytes = if_abap_behv=>mk-on
           ) TO reported-attcfg.
@@ -350,41 +395,76 @@ CLASS lhc_AttCfg IMPLEMENTATION.
             %tky = ls_update-%tky
             %msg = new_message(
                      id       = 'YGSP26SAP20_MSG'
-                     number   = '018'
+                     number   = '032'
                      severity = if_abap_behv_message=>severity-error )
             %element-MaxBytes = if_abap_behv=>mk-on
           ) TO reported-attcfg.
           CONTINUE.
         ENDIF.
-
       ENDIF.
 
       IF ls_update-Description IS NOT INITIAL.
         SHIFT ls_update-Description LEFT DELETING LEADING space.
         SHIFT ls_update-Description RIGHT DELETING TRAILING space.
-
         IF ls_update-Description IS INITIAL.
           APPEND VALUE #( %tky = ls_update-%tky ) TO failed-attcfg.
           APPEND VALUE #(
             %tky = ls_update-%tky
-            %msg = new_message_with_text(
-                     severity = if_abap_behv_message=>severity-error
-                     text     = 'Description cannot be empty.' )
+            %msg = new_message(
+                     id       = 'YGSP26SAP20_MSG'
+                     number   = '002'
+                     v1       = 'Description'
+                     severity = if_abap_behv_message=>severity-error )
             %element-Description = if_abap_behv=>mk-on
           ) TO reported-attcfg.
           CONTINUE.
         ENDIF.
       ENDIF.
 
-      UPDATE zsap20_att_cfg
-        SET mime_type   = @ls_update-MimeType,
-            max_bytes   = @ls_update-MaxBytes,
-            is_active   = @ls_update-IsActive,
-            description = @ls_update-Description,
-            type        = @ls_update-Type
-        WHERE file_ext  = @ls_update-FileExt.
+      SELECT SINGLE *
+        FROM zsap20_att_cfg
+        WHERE file_ext = @ls_update-FileExt
+        INTO @ls_db.
 
-      zcl_attach_config=>reset_cache( ).
+      IF sy-subrc <> 0.
+        APPEND VALUE #( %tky = ls_update-%tky ) TO failed-attcfg.
+        APPEND VALUE #(
+  %tky = ls_update-%tky
+  %msg = new_message(
+           id       = 'YGSP26SAP20_MSG'
+           number   = '034'
+           v1       = ls_update-FileExt
+           severity = if_abap_behv_message=>severity-error )
+) TO reported-attcfg.
+        CONTINUE.
+      ENDIF.
+
+      IF ls_update-MimeType IS NOT INITIAL.
+        ls_db-mime_type = ls_update-MimeType.
+      ENDIF.
+
+      IF ls_update-MaxBytes IS NOT INITIAL.
+        ls_db-max_bytes = ls_update-MaxBytes.
+      ENDIF.
+
+      IF ls_update-Description IS NOT INITIAL.
+        ls_db-description = ls_update-Description.
+      ENDIF.
+
+      IF ls_update-Type IS NOT INITIAL.
+        ls_db-type = ls_update-Type.
+      ENDIF.
+
+      IF ls_update-IsActive IS NOT INITIAL.
+        ls_db-is_active = ls_update-IsActive.
+      ENDIF.
+
+      ls_db-mandt    = sy-mandt.
+      ls_db-file_ext = ls_update-FileExt.
+
+      " Push to Buffer
+      DELETE gt_update_buffer WHERE file_ext = ls_db-file_ext.
+      APPEND ls_db TO gt_update_buffer.
 
     ENDLOOP.
 
@@ -396,13 +476,21 @@ CLASS lhc_AttCfg IMPLEMENTATION.
     ENDIF.
 
     LOOP AT keys INTO DATA(ls_key).
-      UPDATE zsap20_att_cfg
-        SET is_active = ' '
-        WHERE file_ext = @ls_key-FileExt
-          AND is_active = 'X'.
+      DATA ls_db TYPE zsap20_att_cfg.
+      CLEAR ls_db.
+
+      READ TABLE gt_update_buffer INTO ls_db WITH KEY file_ext = ls_key-FileExt.
+      IF sy-subrc <> 0.
+        SELECT SINGLE * FROM zsap20_att_cfg WHERE file_ext = @ls_key-FileExt INTO @ls_db.
+      ENDIF.
+
+      IF ls_db IS NOT INITIAL AND ls_db-is_active = 'X'.
+        ls_db-is_active = ' '.
+        DELETE gt_update_buffer WHERE file_ext = ls_db-file_ext.
+        APPEND ls_db TO gt_update_buffer.
+      ENDIF.
     ENDLOOP.
 
-    zcl_attach_config=>reset_cache( ).
   ENDMETHOD.
 
   METHOD enable.
@@ -411,13 +499,21 @@ CLASS lhc_AttCfg IMPLEMENTATION.
     ENDIF.
 
     LOOP AT keys INTO DATA(ls_key).
-      UPDATE zsap20_att_cfg
-        SET is_active = 'X'
-        WHERE file_ext = @ls_key-FileExt
-          AND is_active <> 'X'.
+      DATA ls_db TYPE zsap20_att_cfg.
+      CLEAR ls_db.
+
+      READ TABLE gt_update_buffer INTO ls_db WITH KEY file_ext = ls_key-FileExt.
+      IF sy-subrc <> 0.
+        SELECT SINGLE * FROM zsap20_att_cfg WHERE file_ext = @ls_key-FileExt INTO @ls_db.
+      ENDIF.
+
+      IF ls_db IS NOT INITIAL AND ls_db-is_active <> 'X'.
+        ls_db-is_active = 'X'.
+        DELETE gt_update_buffer WHERE file_ext = ls_db-file_ext.
+        APPEND ls_db TO gt_update_buffer.
+      ENDIF.
     ENDLOOP.
 
-    zcl_attach_config=>reset_cache( ).
   ENDMETHOD.
 
   METHOD read.
@@ -434,9 +530,63 @@ CLASS lhc_AttCfg IMPLEMENTATION.
       FOR ALL ENTRIES IN @keys
       WHERE file_ext = @keys-FileExt.
 
+    LOOP AT result ASSIGNING FIELD-SYMBOL(<ls_result>).
+      SHIFT <ls_result>-Description LEFT DELETING LEADING space.
+      SHIFT <ls_result>-Description RIGHT DELETING TRAILING space.
+    ENDLOOP.
+
   ENDMETHOD.
 
   METHOD lock.
+  ENDMETHOD.
+
+ENDCLASS.
+
+CLASS lsc_z_i_att_cfg DEFINITION INHERITING FROM cl_abap_behavior_saver.
+  PROTECTED SECTION.
+
+    METHODS finalize REDEFINITION.
+
+    METHODS check_before_save REDEFINITION.
+
+    METHODS save REDEFINITION.
+
+    METHODS cleanup REDEFINITION.
+
+    METHODS cleanup_finalize REDEFINITION.
+
+ENDCLASS.
+
+CLASS lsc_z_i_att_cfg IMPLEMENTATION.
+
+  METHOD finalize.
+  ENDMETHOD.
+
+  METHOD check_before_save.
+  ENDMETHOD.
+
+  METHOD save.
+    " Create
+    IF lhc_attcfg=>gt_create_buffer IS NOT INITIAL.
+      INSERT zsap20_att_cfg FROM TABLE @lhc_attcfg=>gt_create_buffer ACCEPTING DUPLICATE KEYS.
+    ENDIF.
+
+    " Update
+    IF lhc_attcfg=>gt_update_buffer IS NOT INITIAL.
+      UPDATE zsap20_att_cfg FROM TABLE @lhc_attcfg=>gt_update_buffer.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD cleanup.
+    CLEAR: lhc_attcfg=>gt_create_buffer,
+           lhc_attcfg=>gt_update_buffer.
+  ENDMETHOD.
+
+  METHOD cleanup_finalize.
+    CLEAR: lhc_attcfg=>gt_create_buffer,
+           lhc_attcfg=>gt_update_buffer.
+
+    zcl_attach_config=>reset_cache( ).
   ENDMETHOD.
 
 ENDCLASS.

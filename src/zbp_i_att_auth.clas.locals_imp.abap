@@ -86,7 +86,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
           %cid = ls_create_denied-%cid
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '043'
+                   number   = '004'
                    severity = if_abap_behv_message=>severity-error )
         ) TO reported-auth.
       ENDLOOP.
@@ -103,7 +103,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
           %cid = ls_create-%cid
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '044'
+                   number   = '121'
                    severity = if_abap_behv_message=>severity-error )
           %element-Uname = if_abap_behv=>mk-on
         ) TO reported-auth.
@@ -116,7 +116,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
           %cid = ls_create-%cid
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '047'
+                   number   = '124'
                    severity = if_abap_behv_message=>severity-error )
           %element-Role = if_abap_behv=>mk-on
         ) TO reported-auth.
@@ -134,7 +134,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
                         %cid = ls_create-%cid
                         %msg = new_message(
                                id       = 'YGSP26SAP20_MSG'
-                               number   = '045'
+                               number   = '122'
                                severity = if_abap_behv_message=>severity-error
                                v1       = ( ls_create-Uname ) )
         ) TO reported-auth.
@@ -159,7 +159,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
                       %cid = ls_create-%cid
                       %msg = new_message(
                                 id       = 'YGSP26SAP20_MSG'
-                                number   = '036'
+                                number   = '007'
                                 severity = if_abap_behv_message=>severity-success )
       ) TO reported-auth.
 
@@ -182,7 +182,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
           %tky = ls_delete_denied-%tky
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '043'
+                   number   = '004'
                    severity = if_abap_behv_message=>severity-error )
         ) TO reported-auth.
       ENDLOOP.
@@ -199,7 +199,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
           %tky = ls_delete-%tky
           %msg = new_message(
                    id       = 'YGSP26SAP20_MSG'
-                   number   = '048'
+                   number   = '125'
                    severity = if_abap_behv_message=>severity-error )
         ) TO reported-auth.
         CONTINUE.
@@ -216,7 +216,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
                         %tky = ls_delete-%tky
                         %msg = new_message(
                                 id       = 'YGSP26SAP20_MSG'
-                                number   = '046'
+                                number   = '123'
                                 severity = if_abap_behv_message=>severity-error
                                 v1       = ( ls_delete-Uname ) )
         ) TO reported-auth.
@@ -231,7 +231,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
                       %tky = ls_delete-%tky
                       %msg = new_message(
                               id       = 'YGSP26SAP20_MSG'
-                              number   = '036'
+                              number   = '007'
                               severity = if_abap_behv_message=>severity-success )
       ) TO reported-auth.
 

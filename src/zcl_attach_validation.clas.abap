@@ -21,7 +21,7 @@ CLASS zcl_attach_validation DEFINITION
       IMPORTING iv_extension         TYPE string
       RETURNING VALUE(rv_error_text) TYPE string.
 
-    CLASS-METHODS check_mime_type
+    CLASS-METHODS check_config_file
       IMPORTING iv_extension         TYPE string
                 iv_mime_type         TYPE string
       RETURNING VALUE(rv_error_text) TYPE string.
@@ -74,13 +74,16 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     IF lv_title IS INITIAL.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = 'Title must not be empty.'.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '002'
+          iv_attr1 = 'Title'.
     ENDIF.
 
     IF strlen( lv_title ) > 120.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = 'Title length must not exceed 120 characters.'.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '010'.
     ENDIF.
   ENDMETHOD.
 
@@ -93,7 +96,7 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     lv_name = iv_file_name.
 
     IF lv_name IS INITIAL.
-      rv_error_text = 'File name cannot be empty.'.
+      MESSAGE e001(YGSP26SAP20_MSG) WITH 'File name' INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -102,12 +105,12 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     SHIFT lv_trimmed RIGHT DELETING TRAILING space.
 
     IF lv_name <> lv_trimmed.
-      rv_error_text = 'File name cannot start or end with spaces.'.
+      MESSAGE e011(YGSP26SAP20_MSG) INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF lv_name = '.' OR lv_name = '..'.
-      rv_error_text = 'File name cannot be "." or "..".'.
+      MESSAGE e012(YGSP26SAP20_MSG) INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -118,35 +121,35 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     lv_last_char = lv_name+lv_last_index(1).
 
     IF lv_last_char = '.'.
-      rv_error_text = 'File name cannot end with a period.'.
+      MESSAGE e013(YGSP26SAP20_MSG) INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF strlen( lv_name ) > 255.
-      rv_error_text = 'File name cannot exceed 255 characters.'.
+      MESSAGE e014(YGSP26SAP20_MSG) INTO rv_error_text.
       RETURN.
     ENDIF.
 
     DATA lo_matcher TYPE REF TO cl_abap_matcher.
 
-lo_matcher = cl_abap_matcher=>create_pcre(
-  pattern = '[<>:"/\\|?*\x00-\x1F]'
-  text    = lv_name ).
+    lo_matcher = cl_abap_matcher=>create_pcre(
+      pattern = '[<>:"/\\|?*\x00-\x1F]'
+      text    = lv_name ).
 
-IF lo_matcher->match( ) = abap_true.
-  rv_error_text = 'File name contains invalid characters.'.
-  RETURN.
-ENDIF.
+    IF lo_matcher->match( ) = abap_true.
+        MESSAGE e015(YGSP26SAP20_MSG) INTO rv_error_text.
+      RETURN.
+    ENDIF.
 
-lo_matcher = cl_abap_matcher=>create_pcre(
-  pattern     = '^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$'
-  text        = lv_name
-  ignore_case = abap_true ).
+    lo_matcher = cl_abap_matcher=>create_pcre(
+      pattern     = '^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$'
+      text        = lv_name
+      ignore_case = abap_true ).
 
-IF lo_matcher->match( ) = abap_true.
-  rv_error_text = 'File name uses a reserved system name.'.
-  RETURN.
-ENDIF.
+    IF lo_matcher->match( ) = abap_true.
+      MESSAGE e016(YGSP26SAP20_MSG) INTO rv_error_text.
+      RETURN.
+    ENDIF.
   ENDMETHOD.
 
   METHOD check_extension.
@@ -157,20 +160,21 @@ ENDIF.
     lv_ext = zcl_attach_config=>normalize_extension( iv_extension ).
 
     IF lv_ext IS INITIAL.
-      rv_error_text = 'File extension must not be empty.'.
+      MESSAGE e001(YGSP26SAP20_MSG) WITH 'File extension' INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF zcl_attach_config=>is_valid_extension_format( lv_ext ) <> abap_true.
-      rv_error_text = 'File extension format is invalid.'.
+      MESSAGE e036(YGSP26SAP20_MSG) INTO rv_error_text.
       RETURN.
     ENDIF.
   ENDMETHOD.
 
-  METHOD check_mime_type.
+  METHOD check_config_file.
     DATA lv_ext  TYPE string.
     DATA lv_mime TYPE string.
     DATA ls_cfg  TYPE zcl_attach_config=>ts_file_cfg.
+    DATA lt_allowed_mimes TYPE zcl_attach_config=>tt_string.
 
     CLEAR rv_error_text.
 
@@ -178,28 +182,37 @@ ENDIF.
     lv_mime = zcl_attach_config=>normalize_mime_type( iv_mime_type ).
 
     IF lv_ext IS INITIAL.
-      rv_error_text = 'File extension must not be empty.'.
+      MESSAGE e001(YGSP26SAP20_MSG) WITH 'File extension' INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF lv_mime IS INITIAL.
-      rv_error_text = 'MIME type must not be empty.'.
+      MESSAGE e001(YGSP26SAP20_MSG) WITH 'MIME type' INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF zcl_attach_config=>is_valid_mime_format( lv_mime ) <> abap_true.
-      rv_error_text = 'MIME type format is invalid.'.
+      MESSAGE e037(YGSP26SAP20_MSG) INTO rv_error_text.
       RETURN.
     ENDIF.
 
+* 1. Check extension is active/allowed first
     TRY.
-        ls_cfg = zcl_attach_config=>get_by_ext_and_mime(
-                   iv_extension = lv_ext
-                   iv_mime_type = lv_mime ).
+        ls_cfg = zcl_attach_config=>get_by_extension(
+                   iv_extension = lv_ext ).
       CATCH zcx_attach_validation.
-        rv_error_text = 'MIME type is not allowed for this file extension.'.
+        MESSAGE e038(YGSP26SAP20_MSG) INTO rv_error_text.
         RETURN.
     ENDTRY.
+
+* 2. Check MIME belongs to that extension
+    lt_allowed_mimes = zcl_attach_config=>split_mime_types(
+                         CONV string( ls_cfg-mime_type ) ).
+
+    IF NOT line_exists( lt_allowed_mimes[ table_line = lv_mime ] ).
+      MESSAGE e039(YGSP26SAP20_MSG) INTO rv_error_text.
+      RETURN.
+    ENDIF.
   ENDMETHOD.
 
   METHOD get_file_size_error.
@@ -214,7 +227,7 @@ ENDIF.
       RETURN.
     ENDIF.
 
-    lv_error = check_mime_type(
+    lv_error = check_config_file(
                  iv_extension = iv_extension
                  iv_mime_type = iv_mime_type ).
     IF lv_error IS NOT INITIAL.
@@ -223,7 +236,7 @@ ENDIF.
     ENDIF.
 
     IF iv_file_size <= 0.
-      rv_error_text = 'File size must be greater than 0.'.
+      MESSAGE e040(YGSP26SAP20_MSG) INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -233,17 +246,18 @@ ENDIF.
                          iv_mime_type = iv_mime_type ).
 
         IF lv_max_bytes <= 0.
-          rv_error_text = 'No active file size configuration found.'.
+          MESSAGE e035(YGSP26SAP20_MSG) INTO rv_error_text.
           RETURN.
         ENDIF.
 
         IF iv_file_size > lv_max_bytes.
-          rv_error_text = |File size exceeds configured limit ({ lv_max_bytes } bytes).|.
+          DATA(lv_max_bytes_str) = CONV string( lv_max_bytes ).
+          MESSAGE e041(YGSP26SAP20_MSG) WITH lv_max_bytes_str INTO rv_error_text.
           RETURN.
         ENDIF.
 
       CATCH zcx_attach_validation.
-        rv_error_text = 'Invalid file configuration.'.
+        MESSAGE e034(YGSP26SAP20_MSG) WITH iv_extension INTO rv_error_text.
         RETURN.
     ENDTRY.
   ENDMETHOD.
@@ -254,17 +268,18 @@ ENDIF.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '011'.
+          iv_msgno = '001'
+          iv_attr1 = 'FILE_CONTENT'.
     ENDIF.
 
   ENDMETHOD.
 
   METHOD check_active_state.
-    IF iv_is_active IS INITIAL.
+    IF iv_is_active IS INITIAL OR iv_is_active = abap_false.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '002'.
+          iv_msgno = '062'.
     ENDIF.
   ENDMETHOD.
 
@@ -278,14 +293,14 @@ ENDIF.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '003'.
+          iv_msgno = '063'.
     ENDIF.
 
     IF strlen( lv_ver ) <> 3 OR NOT ( lv_ver CO '0123456789' ).
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '004'.
+          iv_msgno = '064'.
     ENDIF.
   ENDMETHOD.
 
@@ -295,32 +310,11 @@ ENDIF.
     lv_ver = iv_target_version.
     CONDENSE lv_ver.
 
-    IF lv_ver IS INITIAL.
+    IF lv_ver IS INITIAL OR strlen( lv_ver ) <> 3 OR NOT ( lv_ver CO '0123456789' ) OR lv_ver = '000'.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '005'.
-    ENDIF.
-
-    IF strlen( lv_ver ) <> 3.
-      RAISE EXCEPTION TYPE zcx_attach_validation
-        EXPORTING
-          iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '006'.
-    ENDIF.
-
-    IF NOT ( lv_ver CO '0123456789' ).
-      RAISE EXCEPTION TYPE zcx_attach_validation
-        EXPORTING
-          iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '007'.
-    ENDIF.
-
-    IF lv_ver = '000'.
-      RAISE EXCEPTION TYPE zcx_attach_validation
-        EXPORTING
-          iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '008'.
+          iv_msgno = '065'.
     ENDIF.
   ENDMETHOD.
 
@@ -329,7 +323,7 @@ ENDIF.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '009'.
+          iv_msgno = '062'.
     ENDIF.
 
     IF iv_version_no IS NOT INITIAL
@@ -337,7 +331,7 @@ ENDIF.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '010'.
+          iv_msgno = '071'.
     ENDIF.
   ENDMETHOD.
 
@@ -347,7 +341,9 @@ ENDIF.
     IF iv_file_id IS INITIAL.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = 'File ID must not be empty.'.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '003'
+          iv_attr1 = 'File'.
     ENDIF.
 
     CLEAR lv_has_version.
@@ -360,7 +356,8 @@ ENDIF.
     IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = 'This attachment has no version yet.'.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '061'.
     ENDIF.
   ENDMETHOD.
 
@@ -368,13 +365,16 @@ ENDIF.
 
     DATA: lv_new_type    TYPE zsap20_att_cfg-type,
           lv_last_type   TYPE zsap20_att_cfg-type,
-          lv_current_ver TYPE zgsp26sap20_verno,
-          ls_last_ver    TYPE zsap20_file_ver.
+          lv_current_ver TYPE zgsp26sap20_de_verno,
+          lv_last_ext    TYPE zsap20_file_ver-file_extension,
+          lv_last_mime   TYPE zsap20_file_ver-mime_type.
 
     IF iv_file_id IS INITIAL.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = 'File ID must not be empty.'.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '003'
+          iv_attr1 = 'FileId'.
     ENDIF.
 
     SELECT SINGLE current_version
@@ -387,9 +387,10 @@ ENDIF.
       RETURN.
     ENDIF.
 
-    SELECT SINGLE *
+    SELECT SINGLE file_extension,
+                  mime_type
       FROM zsap20_file_ver
-      INTO @ls_last_ver
+      INTO ( @lv_last_ext, @lv_last_mime )
       WHERE file_id    = @iv_file_id
         AND version_no = @lv_current_ver.
 
@@ -404,23 +405,28 @@ ENDIF.
       CATCH zcx_attach_validation.
         RAISE EXCEPTION TYPE zcx_attach_validation
           EXPORTING
-            iv_text = 'No active configuration found for uploaded file type.'.
+            iv_msgid = 'YGSP26SAP20_MSG'
+            iv_msgno = '035'.
     ENDTRY.
 
     TRY.
         lv_last_type = zcl_attach_config=>get_type_by_ext_and_mime(
-                         iv_extension = CONV string( ls_last_ver-file_extension )
-                         iv_mime_type = CONV string( ls_last_ver-mime_type ) ).
+                         iv_extension = CONV string( lv_last_ext )
+                         iv_mime_type = CONV string( lv_last_mime ) ).
       CATCH zcx_attach_validation.
         RAISE EXCEPTION TYPE zcx_attach_validation
           EXPORTING
-            iv_text = 'No active configuration found for latest version file type.'.
+            iv_msgid = 'YGSP26SAP20_MSG'
+            iv_msgno = '035'.
     ENDTRY.
 
     IF lv_new_type <> lv_last_type.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
-          iv_text = |Uploaded file type '{ lv_new_type }' does not match latest version type '{ lv_last_type }'.|.
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '070'
+          iv_attr1 = CONV string( lv_new_type )
+          iv_attr2 = CONV string( lv_last_type ).
     ENDIF.
 
   ENDMETHOD.

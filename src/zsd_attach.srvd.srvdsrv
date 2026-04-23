@@ -1,0 +1,8 @@
+@EndUserText.label: 'Attachment - Service Definition'
+define service ZSD_ATTACH {
+  expose Z_C_ATTACH as Attachments;
+  expose Z_C_ATTACH_VER as AttachmentVersions;
+  expose Z_C_ATT_AUDIT as AuditLogs;
+  expose Z_C_BO_ATT_LK as BusinessObjectAttachmentLinks;
+  expose Z_C_BIZ_OBJ as BusinessObjects;
+}

@@ -1,0 +1,6 @@
+@EndUserText.label: 'Business Object - Service Definition'
+define service ZSD_BIZOBJ {
+  expose Z_C_BIZ_OBJ as BusinessObjects;
+  expose Z_C_BO_ATT_LK as BusinessObjectAttachmentLinks;
+  expose Z_C_ATTACH as Attachments;
+}

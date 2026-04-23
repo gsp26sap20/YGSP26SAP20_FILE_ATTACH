@@ -10,29 +10,29 @@ CLASS zcl_admin_dash_stats_provider DEFINITION
 
     TYPES:
       BEGIN OF ty_result,
-        overviewkey                  TYPE c LENGTH 1,
-        attachmentscreatedday        TYPE i,
-        attachmentscreatedweek       TYPE i,
-        attachmentscreatedmonth      TYPE i,
-        attachmentscreatedyear       TYPE i,
-        bocreatedday                 TYPE i,
-        bocreatedweek                TYPE i,
-        bocreatedmonth               TYPE i,
-        bocreatedyear                TYPE i,
-        linkscreatedday              TYPE i,
-        linkscreatedweek             TYPE i,
-        linkscreatedmonth            TYPE i,
-        linkscreatedyear             TYPE i,
-        deletedattachmentsday        TYPE i,
-        deletedattachmentsweek       TYPE i,
-        deletedattachmentsmonth      TYPE i,
-        deletedattachmentsyear       TYPE i,
-        reactivatedattachmentsday    TYPE i,
-        reactivatedattachmentsweek   TYPE i,
-        reactivatedattachmentsmonth  TYPE i,
-        reactivatedattachmentsyear   TYPE i,
-        unlinkedattachments          TYPE i,
-        bowithoutattachments         TYPE i,
+        overviewkey                 TYPE c LENGTH 1,
+        attachmentscreatedday       TYPE i,
+        attachmentscreatedweek      TYPE i,
+        attachmentscreatedmonth     TYPE i,
+        attachmentscreatedyear      TYPE i,
+        bocreatedday                TYPE i,
+        bocreatedweek               TYPE i,
+        bocreatedmonth              TYPE i,
+        bocreatedyear               TYPE i,
+        linkscreatedday             TYPE i,
+        linkscreatedweek            TYPE i,
+        linkscreatedmonth           TYPE i,
+        linkscreatedyear            TYPE i,
+        deletedattachmentsday       TYPE i,
+        deletedattachmentsweek      TYPE i,
+        deletedattachmentsmonth     TYPE i,
+        deletedattachmentsyear      TYPE i,
+        reactivatedattachmentsday   TYPE i,
+        reactivatedattachmentsweek  TYPE i,
+        reactivatedattachmentsmonth TYPE i,
+        reactivatedattachmentsyear  TYPE i,
+        unlinkedattachments         TYPE i,
+        bowithoutattachments        TYPE i,
       END OF ty_result.
 
     TYPES tt_result TYPE STANDARD TABLE OF ty_result WITH EMPTY KEY.
@@ -57,28 +57,28 @@ CLASS zcl_admin_dash_stats_provider DEFINITION
                 ev_date_to   TYPE sydatum.
 
     METHODS count_attachments_created
-      IMPORTING iv_date_from TYPE sydatum
-                iv_date_to   TYPE sydatum
+      IMPORTING iv_date_from    TYPE sydatum
+                iv_date_to      TYPE sydatum
       RETURNING VALUE(rv_count) TYPE i.
 
     METHODS count_bo_created
-      IMPORTING iv_date_from TYPE sydatum
-                iv_date_to   TYPE sydatum
+      IMPORTING iv_date_from    TYPE sydatum
+                iv_date_to      TYPE sydatum
       RETURNING VALUE(rv_count) TYPE i.
 
     METHODS count_links_created
-      IMPORTING iv_date_from TYPE sydatum
-                iv_date_to   TYPE sydatum
+      IMPORTING iv_date_from    TYPE sydatum
+                iv_date_to      TYPE sydatum
       RETURNING VALUE(rv_count) TYPE i.
 
     METHODS count_deleted_attachments
-      IMPORTING iv_date_from TYPE sydatum
-                iv_date_to   TYPE sydatum
+      IMPORTING iv_date_from    TYPE sydatum
+                iv_date_to      TYPE sydatum
       RETURNING VALUE(rv_count) TYPE i.
 
     METHODS count_reactivated_attachments
-      IMPORTING iv_date_from TYPE sydatum
-                iv_date_to   TYPE sydatum
+      IMPORTING iv_date_from    TYPE sydatum
+                iv_date_to      TYPE sydatum
       RETURNING VALUE(rv_count) TYPE i.
 
     METHODS count_unlinked_attachments
@@ -114,23 +114,23 @@ CLASS zcl_admin_dash_stats_provider IMPLEMENTATION.
   ENDMETHOD.
 
 
-METHOD get_week_range.
+  METHOD get_week_range.
 
-  DATA lv_weekday   TYPE scal-indicator.
-  DATA lv_weekday_i TYPE i.
+    DATA lv_weekday   TYPE scal-indicator.
+    DATA lv_weekday_i TYPE i.
 
-  CALL FUNCTION 'DATE_COMPUTE_DAY'
-    EXPORTING
-      date = sy-datum
-    IMPORTING
-      day  = lv_weekday.
+    CALL FUNCTION 'DATE_COMPUTE_DAY'
+      EXPORTING
+        date = sy-datum
+      IMPORTING
+        day  = lv_weekday.
 
-  lv_weekday_i = lv_weekday.
+    lv_weekday_i = lv_weekday.
 
-  ev_date_from = sy-datum - lv_weekday_i + 1.
-  ev_date_to   = sy-datum.
+    ev_date_from = sy-datum - lv_weekday_i + 1.
+    ev_date_to   = sy-datum.
 
-ENDMETHOD.
+  ENDMETHOD.
 
 
   METHOD get_month_range.
@@ -176,7 +176,7 @@ ENDMETHOD.
     DATA lv_from      TYPE i.
     DATA lv_to        TYPE i.
 
-    " ===== AUTH =====
+    " auth
     IF is_admin( ) <> abap_true.
       IF io_request->is_total_numb_of_rec_requested( ).
         io_response->set_total_number_of_records( 0 ).
@@ -188,113 +188,113 @@ ENDMETHOD.
       RETURN.
     ENDIF.
 
-    " ===== PAGING SAFE =====
+    " paging safe
     lo_paging = io_request->get_paging( ).
     IF lo_paging IS BOUND.
       lv_page_size = lo_paging->get_page_size( ).
       lv_offset    = lo_paging->get_offset( ).
     ENDIF.
 
-    " ===== DATE RANGE =====
+    " date range
     get_day_range(   IMPORTING ev_date_from = lv_day_from   ev_date_to = lv_day_to ).
     get_week_range(  IMPORTING ev_date_from = lv_week_from  ev_date_to = lv_week_to ).
     get_month_range( IMPORTING ev_date_from = lv_month_from ev_date_to = lv_month_to ).
     get_year_range(  IMPORTING ev_date_from = lv_year_from  ev_date_to = lv_year_to ).
 
-    " ===== BUILD DATA =====
+    " build data
     CLEAR ls_result.
-ls_result-overviewkey = '1'.
+    ls_result-overviewkey = '1'.
 
-ls_result-attachmentscreatedday = count_attachments_created(
-  iv_date_from = lv_day_from
-  iv_date_to   = lv_day_to ).
+    ls_result-attachmentscreatedday = count_attachments_created(
+      iv_date_from = lv_day_from
+      iv_date_to   = lv_day_to ).
 
-ls_result-attachmentscreatedweek = count_attachments_created(
-  iv_date_from = lv_week_from
-  iv_date_to   = lv_week_to ).
+    ls_result-attachmentscreatedweek = count_attachments_created(
+      iv_date_from = lv_week_from
+      iv_date_to   = lv_week_to ).
 
-ls_result-attachmentscreatedmonth = count_attachments_created(
-  iv_date_from = lv_month_from
-  iv_date_to   = lv_month_to ).
+    ls_result-attachmentscreatedmonth = count_attachments_created(
+      iv_date_from = lv_month_from
+      iv_date_to   = lv_month_to ).
 
-ls_result-attachmentscreatedyear = count_attachments_created(
-  iv_date_from = lv_year_from
-  iv_date_to   = lv_year_to ).
+    ls_result-attachmentscreatedyear = count_attachments_created(
+      iv_date_from = lv_year_from
+      iv_date_to   = lv_year_to ).
 
-ls_result-bocreatedday = count_bo_created(
-  iv_date_from = lv_day_from
-  iv_date_to   = lv_day_to ).
+    ls_result-bocreatedday = count_bo_created(
+      iv_date_from = lv_day_from
+      iv_date_to   = lv_day_to ).
 
-ls_result-bocreatedweek = count_bo_created(
-  iv_date_from = lv_week_from
-  iv_date_to   = lv_week_to ).
+    ls_result-bocreatedweek = count_bo_created(
+      iv_date_from = lv_week_from
+      iv_date_to   = lv_week_to ).
 
-ls_result-bocreatedmonth = count_bo_created(
-  iv_date_from = lv_month_from
-  iv_date_to   = lv_month_to ).
+    ls_result-bocreatedmonth = count_bo_created(
+      iv_date_from = lv_month_from
+      iv_date_to   = lv_month_to ).
 
-ls_result-bocreatedyear = count_bo_created(
-  iv_date_from = lv_year_from
-  iv_date_to   = lv_year_to ).
+    ls_result-bocreatedyear = count_bo_created(
+      iv_date_from = lv_year_from
+      iv_date_to   = lv_year_to ).
 
-ls_result-linkscreatedday = count_links_created(
-  iv_date_from = lv_day_from
-  iv_date_to   = lv_day_to ).
+    ls_result-linkscreatedday = count_links_created(
+      iv_date_from = lv_day_from
+      iv_date_to   = lv_day_to ).
 
-ls_result-linkscreatedweek = count_links_created(
-  iv_date_from = lv_week_from
-  iv_date_to   = lv_week_to ).
+    ls_result-linkscreatedweek = count_links_created(
+      iv_date_from = lv_week_from
+      iv_date_to   = lv_week_to ).
 
-ls_result-linkscreatedmonth = count_links_created(
-  iv_date_from = lv_month_from
-  iv_date_to   = lv_month_to ).
+    ls_result-linkscreatedmonth = count_links_created(
+      iv_date_from = lv_month_from
+      iv_date_to   = lv_month_to ).
 
-ls_result-linkscreatedyear = count_links_created(
-  iv_date_from = lv_year_from
-  iv_date_to   = lv_year_to ).
+    ls_result-linkscreatedyear = count_links_created(
+      iv_date_from = lv_year_from
+      iv_date_to   = lv_year_to ).
 
-ls_result-deletedattachmentsday = count_deleted_attachments(
-  iv_date_from = lv_day_from
-  iv_date_to   = lv_day_to ).
+    ls_result-deletedattachmentsday = count_deleted_attachments(
+      iv_date_from = lv_day_from
+      iv_date_to   = lv_day_to ).
 
-ls_result-deletedattachmentsweek = count_deleted_attachments(
-  iv_date_from = lv_week_from
-  iv_date_to   = lv_week_to ).
+    ls_result-deletedattachmentsweek = count_deleted_attachments(
+      iv_date_from = lv_week_from
+      iv_date_to   = lv_week_to ).
 
-ls_result-deletedattachmentsmonth = count_deleted_attachments(
-  iv_date_from = lv_month_from
-  iv_date_to   = lv_month_to ).
+    ls_result-deletedattachmentsmonth = count_deleted_attachments(
+      iv_date_from = lv_month_from
+      iv_date_to   = lv_month_to ).
 
-ls_result-deletedattachmentsyear = count_deleted_attachments(
-  iv_date_from = lv_year_from
-  iv_date_to   = lv_year_to ).
+    ls_result-deletedattachmentsyear = count_deleted_attachments(
+      iv_date_from = lv_year_from
+      iv_date_to   = lv_year_to ).
 
-ls_result-reactivatedattachmentsday = count_reactivated_attachments(
-  iv_date_from = lv_day_from
-  iv_date_to   = lv_day_to ).
+    ls_result-reactivatedattachmentsday = count_reactivated_attachments(
+      iv_date_from = lv_day_from
+      iv_date_to   = lv_day_to ).
 
-ls_result-reactivatedattachmentsweek = count_reactivated_attachments(
-  iv_date_from = lv_week_from
-  iv_date_to   = lv_week_to ).
+    ls_result-reactivatedattachmentsweek = count_reactivated_attachments(
+      iv_date_from = lv_week_from
+      iv_date_to   = lv_week_to ).
 
-ls_result-reactivatedattachmentsmonth = count_reactivated_attachments(
-  iv_date_from = lv_month_from
-  iv_date_to   = lv_month_to ).
+    ls_result-reactivatedattachmentsmonth = count_reactivated_attachments(
+      iv_date_from = lv_month_from
+      iv_date_to   = lv_month_to ).
 
-ls_result-reactivatedattachmentsyear = count_reactivated_attachments(
-  iv_date_from = lv_year_from
-  iv_date_to   = lv_year_to ).
+    ls_result-reactivatedattachmentsyear = count_reactivated_attachments(
+      iv_date_from = lv_year_from
+      iv_date_to   = lv_year_to ).
 
-ls_result-unlinkedattachments = count_unlinked_attachments( ).
-ls_result-bowithoutattachments = count_bo_without_attachments( ).
+    ls_result-unlinkedattachments = count_unlinked_attachments( ).
+    ls_result-bowithoutattachments = count_bo_without_attachments( ).
     APPEND ls_result TO lt_result.
 
-    " ===== TOTAL =====
+    " total
     IF io_request->is_total_numb_of_rec_requested( ).
       io_response->set_total_number_of_records( lines( lt_result ) ).
     ENDIF.
 
-    " ===== PAGING =====
+    " paging
     IF lv_page_size <= 0.
       lt_result_paged = lt_result.
     ELSE.
@@ -306,14 +306,14 @@ ls_result-bowithoutattachments = count_bo_without_attachments( ).
       ENDLOOP.
     ENDIF.
 
-    " ===== RETURN =====
+    " return
     IF io_request->is_data_requested( ).
       io_response->set_data( lt_result_paged ).
     ENDIF.
 
   ENDMETHOD.
 
-    METHOD count_attachments_created.
+  METHOD count_attachments_created.
     SELECT COUNT( * )
       FROM zsap20_file_mgmt
       WHERE erdat >= @iv_date_from

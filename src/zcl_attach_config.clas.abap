@@ -64,12 +64,16 @@ CLASS zcl_attach_config DEFINITION
                 iv_mime_type   TYPE string
       RETURNING VALUE(rv_type) TYPE zsap20_att_cfg-type
       RAISING   zcx_attach_validation.
+    CLASS-METHODS get_by_extension
+      IMPORTING iv_extension  TYPE string
+      RETURNING VALUE(rs_cfg) TYPE ts_file_cfg
+      RAISING   zcx_attach_validation.
 
     CLASS-METHODS reset_cache.
 
     CONSTANTS:
       c_audit_create              TYPE zsap20_att_audit-action VALUE 'CREATE',
-      c_audit_update_title        TYPE zsap20_att_audit-action VALUE 'UPDATE_TITLE',
+      c_audit_update_title        TYPE zsap20_att_audit-action VALUE 'UPDATE',
       c_audit_set_current_version TYPE zsap20_att_audit-action VALUE 'SET_CURRENT_VERSION',
       c_audit_delete              TYPE zsap20_att_audit-action VALUE 'DELETE',
       c_audit_reactivate          TYPE zsap20_att_audit-action VALUE 'REACTIVATE',
@@ -217,14 +221,16 @@ CLASS zcl_attach_config IMPLEMENTATION.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '028'.
+          iv_attr1 = 'EXTENSION'
+          iv_msgno = '001'.
     ENDIF.
 
     IF lv_mime IS INITIAL.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '029'.
+          iv_attr1 = 'MIME'
+          iv_msgno = '001'.
     ENDIF.
 
     load_config( ).
@@ -237,7 +243,7 @@ CLASS zcl_attach_config IMPLEMENTATION.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '030'.
+          iv_msgno = '035'.
     ENDIF.
 
     lt_allowed_mimes = split_mime_types( CONV string( rs_cfg-mime_type ) ).
@@ -246,7 +252,7 @@ CLASS zcl_attach_config IMPLEMENTATION.
       RAISE EXCEPTION TYPE zcx_attach_validation
         EXPORTING
           iv_msgid = 'YGSP26SAP20_MSG'
-          iv_msgno = '030'.
+          iv_msgno = '035'.
     ENDIF.
   ENDMETHOD.
 
@@ -293,6 +299,32 @@ CLASS zcl_attach_config IMPLEMENTATION.
 
   METHOD reset_cache.
     CLEAR: gt_cfg, gv_loaded.
+  ENDMETHOD.
+
+  METHOD get_by_extension.
+    DATA lv_ext TYPE string.
+
+    lv_ext = normalize_extension( iv_extension ).
+
+    IF lv_ext IS INITIAL.
+      RAISE EXCEPTION TYPE zcx_attach_validation
+        EXPORTING
+          iv_msgid = 'YGSP26SAP20_MSG'
+          iv_msgno = '001'
+          iv_attr1 = 'Extension'.
+    ENDIF.
+
+    load_config( ).
+
+    READ TABLE gt_cfg
+      WITH TABLE KEY file_ext = lv_ext
+      INTO rs_cfg.
+
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE zcx_attach_validation
+        EXPORTING
+          iv_text = 'File extension is not allowed or inactive.'.
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.

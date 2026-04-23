@@ -27,7 +27,6 @@ ENDCLASS.
 CLASS zcx_attach_validation IMPLEMENTATION.
   METHOD constructor ##ADT_SUPPRESS_GENERATION.
     super->constructor( ).
-    "mv_text = iv_text."
    IF iv_msgid IS NOT INITIAL AND iv_msgno IS NOT INITIAL.
 
       me->if_t100_message~t100key = VALUE scx_t100key(

@@ -1,0 +1,4 @@
+@EndUserText.label: 'Attachment Config Service'
+define service ZSD_ATT_CFG {
+  expose Z_C_ATT_CFG as AttachmentConfigurations;
+}

@@ -12,379 +12,313 @@
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>001</MSGNR>
-     <TEXT>The file size has exceeded the 10MB limit.</TEXT>
+     <TEXT>Field &amp;1 cannot be empty.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>002</MSGNR>
-     <TEXT>Attachment is inactive.</TEXT>
+     <TEXT>&amp;1 cannot be empty or consist only of spaces.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>003</MSGNR>
-     <TEXT>Current version must not be empty.</TEXT>
+     <TEXT>Please specify the &amp;1 ID.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>004</MSGNR>
-     <TEXT>Current version must be numeric format (NUMC3).</TEXT>
+     <TEXT>Action requires ADMIN privileges.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>005</MSGNR>
-     <TEXT>Rollback target version must not be empty.</TEXT>
+     <TEXT>System Error: Unable to generate UUID for &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>006</MSGNR>
-     <TEXT>Rollback target must be exactly 3 digits.</TEXT>
+     <TEXT>System Error: ID remains initial.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>007</MSGNR>
-     <TEXT>Rollback target must contain only digits.</TEXT>
+     <TEXT>Action completed successfully!</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>008</MSGNR>
-     <TEXT>Rollback target must be greater than 000.</TEXT>
+     <TEXT>&amp;1 completed successfully!</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>009</MSGNR>
-     <TEXT>Attachment already inactive.</TEXT>
+     <TEXT>&amp;1 failed!</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>010</MSGNR>
-     <TEXT>Cannot delete current active version.</TEXT>
+     <TEXT>Title length must not exceed 120 characters.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>011</MSGNR>
-     <TEXT>FILE_CONTENT must not be empty.</TEXT>
+     <TEXT>File name cannot start or end with spaces.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>012</MSGNR>
-     <TEXT>Only ADMIN can create config.</TEXT>
+     <TEXT>File name cannot be &quot;.&quot; or &quot;..&quot;.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>013</MSGNR>
-     <TEXT>Only ADMIN can update config.</TEXT>
+     <TEXT>File name cannot end with a period.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>014</MSGNR>
-     <TEXT>Only ADMIN can disable config.</TEXT>
+     <TEXT>File name cannot exceed 255 characters.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>015</MSGNR>
-     <TEXT>FileExt is required.</TEXT>
+     <TEXT>File name contains invalid characters.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>016</MSGNR>
-     <TEXT>MimeType is invalid.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>017</MSGNR>
-     <TEXT>MaxBytes must be greater than 0.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>018</MSGNR>
-     <TEXT>MaxBytes must not exceed 10MB.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>019</MSGNR>
-     <TEXT>Extension &amp;1 already exists.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>020</MSGNR>
-     <TEXT>Config &amp;1 created successfully.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>021</MSGNR>
-     <TEXT>Config &amp;1 updated successfully.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>022</MSGNR>
-     <TEXT>Config &amp;1 not found.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>023</MSGNR>
-     <TEXT>Config &amp;1 disabled successfully.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>024</MSGNR>
-     <TEXT>Create failed for &amp;1.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>025</MSGNR>
-     <TEXT>You do not have permission to update this attachment.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>026</MSGNR>
-     <TEXT>Version &amp;1 does not exist for this attachment.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>027</MSGNR>
-     <TEXT>Only owner or ADMIN can delete this attachment.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>028</MSGNR>
-     <TEXT>FILE_EXTENSION must not be empty.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>029</MSGNR>
-     <TEXT>MIME_TYPE must not be empty.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>030</MSGNR>
-     <TEXT>No active configuration found for this extension and MIME type.</TEXT>
+     <TEXT>File name uses a reserved system name.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>031</MSGNR>
-     <TEXT>This Business Object is already linked to attachments.</TEXT>
+     <TEXT>MaxBytes must be greater than 0.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>032</MSGNR>
-     <TEXT>This Business Object is added to delete queue.</TEXT>
+     <TEXT>The file size exceeds the 10MB limit.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>033</MSGNR>
-     <TEXT>Please enter File ID</TEXT>
+     <TEXT>Configuration for extension &amp;1 already exists.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>034</MSGNR>
-     <TEXT>Attachment &amp;1 is not exists or has been removed.</TEXT>
+     <TEXT>Configuration for &amp;1 not found.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>035</MSGNR>
-     <TEXT>This Business Object has been linked to this Attachment.</TEXT>
+     <TEXT>No active config found for this extension and MIME.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>036</MSGNR>
-     <TEXT>Action successfully!</TEXT>
+     <TEXT>File extension format is invalid.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>037</MSGNR>
-     <TEXT>BoId and FileId can&apos;t be empty.</TEXT>
+     <TEXT>One or more MIME types are invalid.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>038</MSGNR>
-     <TEXT>Business Object &amp;1 does not exist.</TEXT>
+     <TEXT>File extension is not allowed or inactive.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>039</MSGNR>
-     <TEXT>Title cannot be empty or just spaces.</TEXT>
+     <TEXT>MIME type is not allowed for this file extension.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>040</MSGNR>
-     <TEXT>Allow only PORDER (Purchase order), SORDER (Sale order) or INVOICE type!</TEXT>
+     <TEXT>File size must be greater than 0.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>041</MSGNR>
-     <TEXT>Allow only NEW, INPR (In progress) or COMP (complete) status!</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>042</MSGNR>
-     <TEXT>Unable to generate Business Object ID</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>043</MSGNR>
-     <TEXT>Only ADMIN can do this action!</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>044</MSGNR>
-     <TEXT>Please enter Username</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>045</MSGNR>
-     <TEXT>Username &amp;1 already exists.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>046</MSGNR>
-     <TEXT>Username &amp;1 does not exists.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>047</MSGNR>
-     <TEXT>Only ADMIN role can be created.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>048</MSGNR>
-     <TEXT>You cannot delete your own authorization record.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>049</MSGNR>
-     <TEXT>Please enter Business Object ID</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>050</MSGNR>
-     <TEXT>Unable to generate FILE_ID (UUID).</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>051</MSGNR>
-     <TEXT>FILE_ID is initial after UUID generation.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>052</MSGNR>
-     <TEXT>Attachment linked to BO. Delete not allowed.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>053</MSGNR>
-     <TEXT>Only ADMIN can reactivate attachment.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>054</MSGNR>
-     <TEXT>Please enter Business Object ID.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>055</MSGNR>
-     <TEXT>Business Object &amp;1 does not exist in the database.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>056</MSGNR>
-     <TEXT>Cannot link an inactive or deleted attachment.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>057</MSGNR>
-     <TEXT>File already linked to Business Object &amp;1.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>058</MSGNR>
-     <TEXT>Linked to Business Object &amp;1 successfully.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>059</MSGNR>
-     <TEXT>Attachment not found.</TEXT>
-    </T100>
-    <T100>
-     <SPRSL>E</SPRSL>
-     <ARBGB>YGSP26SAP20_MSG</ARBGB>
-     <MSGNR>060</MSGNR>
-     <TEXT>Attachment locked. Only owner &amp;1 can upload.</TEXT>
+     <TEXT>File size exceeds configured limit (&amp;1 bytes).</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>061</MSGNR>
-     <TEXT>Version limit exceeded (999).</TEXT>
+     <TEXT>Attachment does not exist or has been removed.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>062</MSGNR>
-     <TEXT>Version &amp;1 uploaded.</TEXT>
+     <TEXT>Attachment is inactive (soft-deleted).</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>063</MSGNR>
-     <TEXT>Action successfully for &amp;1!</TEXT>
+     <TEXT>Current version cannot be empty.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>064</MSGNR>
+     <TEXT>Current version must be in numeric format (NUMC3).</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>065</MSGNR>
+     <TEXT>The rollback target version does not exist.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>066</MSGNR>
+     <TEXT>You do not have permission to update this attachment.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>067</MSGNR>
+     <TEXT>Only the owner or an ADMIN can delete this attachment.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>068</MSGNR>
+     <TEXT>Attachment is locked. Only attach owner can upload.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>069</MSGNR>
+     <TEXT>Maximum version limit (999) has been exceeded.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>070</MSGNR>
+     <TEXT>Uploaded file type &amp;1 does not match latest version type &amp;2.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>071</MSGNR>
+     <TEXT>Current version cannot be deleted.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>091</MSGNR>
+     <TEXT>Business Object does not exist or is locked.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>092</MSGNR>
+     <TEXT>Invalid Type. Allowed: PORDER, SORDER, INVOICE.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>093</MSGNR>
+     <TEXT>Invalid Status. Allowed: NEW, INPR, COMP.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>094</MSGNR>
+     <TEXT>Both BoID and FileID are required for linking.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>095</MSGNR>
+     <TEXT>File is already linked to Business Object.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>096</MSGNR>
+     <TEXT>Deletion denied. BO is linked to attachments.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>097</MSGNR>
+     <TEXT>Deletion denied. Attachment is linked to a BO.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>098</MSGNR>
+     <TEXT>Cannot link an inactive or soft-deleted attachment.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>099</MSGNR>
+     <TEXT>Cannot found the link between this BO and Attach.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>121</MSGNR>
+     <TEXT>Please enter a valid Username.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>122</MSGNR>
+     <TEXT>Authorization record for Username &amp;1 already exists.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>123</MSGNR>
+     <TEXT>Authorization record for Username &amp;1 does not exist.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>124</MSGNR>
+     <TEXT>Only the &apos;ADMIN&apos; role can be assigned.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>125</MSGNR>
+     <TEXT>Action denied. You cannot delete your own record.</TEXT>
     </T100>
    </T100>
   </asx:values>

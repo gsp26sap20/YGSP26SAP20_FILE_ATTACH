@@ -3,8 +3,8 @@
 {
 "FROM":
 [
-"Z_I_CURR_ADMIN",
-"ZSAP20_FILE_VER"
+"Z_I_ATT_VER_NORM",
+"Z_I_CURR_ADMIN"
 ],
 "ASSOCIATED":
 [],

@@ -1,0 +1,5 @@
+@EndUserText.label: 'Attachment Auth - Service Definition'
+define service ZSD_ATT_AUTH {
+  expose Z_C_ATT_AUTH as Auth;
+  expose Z_C_CURRENT_USER_ROLE as CurrentUserRole;
+}
