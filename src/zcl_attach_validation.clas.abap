@@ -96,7 +96,7 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     lv_name = iv_file_name.
 
     IF lv_name IS INITIAL.
-      MESSAGE e001(YGSP26SAP20_MSG) WITH 'File name' INTO rv_error_text.
+      MESSAGE e001(ygsp26sap20_msg) WITH 'File name' INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -105,12 +105,12 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     SHIFT lv_trimmed RIGHT DELETING TRAILING space.
 
     IF lv_name <> lv_trimmed.
-      MESSAGE e011(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e011(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF lv_name = '.' OR lv_name = '..'.
-      MESSAGE e012(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e012(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -121,12 +121,12 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     lv_last_char = lv_name+lv_last_index(1).
 
     IF lv_last_char = '.'.
-      MESSAGE e013(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e013(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF strlen( lv_name ) > 255.
-      MESSAGE e014(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e014(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -137,7 +137,7 @@ CLASS zcl_attach_validation IMPLEMENTATION.
       text    = lv_name ).
 
     IF lo_matcher->match( ) = abap_true.
-        MESSAGE e015(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e015(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -147,7 +147,7 @@ CLASS zcl_attach_validation IMPLEMENTATION.
       ignore_case = abap_true ).
 
     IF lo_matcher->match( ) = abap_true.
-      MESSAGE e016(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e016(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
   ENDMETHOD.
@@ -160,12 +160,12 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     lv_ext = zcl_attach_config=>normalize_extension( iv_extension ).
 
     IF lv_ext IS INITIAL.
-      MESSAGE e001(YGSP26SAP20_MSG) WITH 'File extension' INTO rv_error_text.
+      MESSAGE e001(ygsp26sap20_msg) WITH 'File extension' INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF zcl_attach_config=>is_valid_extension_format( lv_ext ) <> abap_true.
-      MESSAGE e036(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e036(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
   ENDMETHOD.
@@ -182,17 +182,17 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     lv_mime = zcl_attach_config=>normalize_mime_type( iv_mime_type ).
 
     IF lv_ext IS INITIAL.
-      MESSAGE e001(YGSP26SAP20_MSG) WITH 'File extension' INTO rv_error_text.
+      MESSAGE e001(ygsp26sap20_msg) WITH 'File extension' INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF lv_mime IS INITIAL.
-      MESSAGE e001(YGSP26SAP20_MSG) WITH 'MIME type' INTO rv_error_text.
+      MESSAGE e001(ygsp26sap20_msg) WITH 'MIME type' INTO rv_error_text.
       RETURN.
     ENDIF.
 
     IF zcl_attach_config=>is_valid_mime_format( lv_mime ) <> abap_true.
-      MESSAGE e037(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e037(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -201,7 +201,7 @@ CLASS zcl_attach_validation IMPLEMENTATION.
         ls_cfg = zcl_attach_config=>get_by_extension(
                    iv_extension = lv_ext ).
       CATCH zcx_attach_validation.
-        MESSAGE e038(YGSP26SAP20_MSG) INTO rv_error_text.
+        MESSAGE e038(ygsp26sap20_msg) INTO rv_error_text.
         RETURN.
     ENDTRY.
 
@@ -210,7 +210,7 @@ CLASS zcl_attach_validation IMPLEMENTATION.
                          CONV string( ls_cfg-mime_type ) ).
 
     IF NOT line_exists( lt_allowed_mimes[ table_line = lv_mime ] ).
-      MESSAGE e039(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e039(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
   ENDMETHOD.
@@ -236,7 +236,7 @@ CLASS zcl_attach_validation IMPLEMENTATION.
     ENDIF.
 
     IF iv_file_size <= 0.
-      MESSAGE e040(YGSP26SAP20_MSG) INTO rv_error_text.
+      MESSAGE e040(ygsp26sap20_msg) INTO rv_error_text.
       RETURN.
     ENDIF.
 
@@ -246,18 +246,18 @@ CLASS zcl_attach_validation IMPLEMENTATION.
                          iv_mime_type = iv_mime_type ).
 
         IF lv_max_bytes <= 0.
-          MESSAGE e035(YGSP26SAP20_MSG) INTO rv_error_text.
+          MESSAGE e035(ygsp26sap20_msg) INTO rv_error_text.
           RETURN.
         ENDIF.
 
         IF iv_file_size > lv_max_bytes.
           DATA(lv_max_bytes_str) = CONV string( lv_max_bytes ).
-          MESSAGE e041(YGSP26SAP20_MSG) WITH lv_max_bytes_str INTO rv_error_text.
+          MESSAGE e041(ygsp26sap20_msg) WITH lv_max_bytes_str INTO rv_error_text.
           RETURN.
         ENDIF.
 
       CATCH zcx_attach_validation.
-        MESSAGE e034(YGSP26SAP20_MSG) WITH iv_extension INTO rv_error_text.
+        MESSAGE e034(ygsp26sap20_msg) WITH iv_extension INTO rv_error_text.
         RETURN.
     ENDTRY.
   ENDMETHOD.

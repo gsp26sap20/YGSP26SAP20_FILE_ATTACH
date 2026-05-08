@@ -421,21 +421,28 @@ CLASS lhc_AttCfg IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
-      SELECT SINGLE *
-        FROM zsap20_att_cfg
-        WHERE file_ext = @ls_update-FileExt
-        INTO @ls_db.
+      SELECT SINGLE
+       mandt,
+       file_ext,
+       mime_type,
+       max_bytes,
+       is_active,
+       description,
+       type
+      FROM zsap20_att_cfg
+      WHERE file_ext = @ls_update-FileExt
+      INTO @ls_db.
 
       IF sy-subrc <> 0.
         APPEND VALUE #( %tky = ls_update-%tky ) TO failed-attcfg.
         APPEND VALUE #(
-  %tky = ls_update-%tky
-  %msg = new_message(
+           %tky = ls_update-%tky
+           %msg = new_message(
            id       = 'YGSP26SAP20_MSG'
            number   = '034'
            v1       = ls_update-FileExt
            severity = if_abap_behv_message=>severity-error )
-) TO reported-attcfg.
+      ) TO reported-attcfg.
         CONTINUE.
       ENDIF.
 
@@ -481,7 +488,17 @@ CLASS lhc_AttCfg IMPLEMENTATION.
 
       READ TABLE gt_update_buffer INTO ls_db WITH KEY file_ext = ls_key-FileExt.
       IF sy-subrc <> 0.
-        SELECT SINGLE * FROM zsap20_att_cfg WHERE file_ext = @ls_key-FileExt INTO @ls_db.
+        SELECT SINGLE
+       mandt,
+       file_ext,
+       mime_type,
+       max_bytes,
+       is_active,
+       description,
+       type
+       FROM zsap20_att_cfg
+       WHERE file_ext = @ls_key-FileExt
+       INTO @ls_db.
       ENDIF.
 
       IF ls_db IS NOT INITIAL AND ls_db-is_active = 'X'.
@@ -504,7 +521,17 @@ CLASS lhc_AttCfg IMPLEMENTATION.
 
       READ TABLE gt_update_buffer INTO ls_db WITH KEY file_ext = ls_key-FileExt.
       IF sy-subrc <> 0.
-        SELECT SINGLE * FROM zsap20_att_cfg WHERE file_ext = @ls_key-FileExt INTO @ls_db.
+        SELECT SINGLE
+       mandt,
+       file_ext,
+       mime_type,
+       max_bytes,
+       is_active,
+       description,
+       type
+       FROM zsap20_att_cfg
+       WHERE file_ext = @ls_key-FileExt
+       INTO @ls_db.
       ENDIF.
 
       IF ls_db IS NOT INITIAL AND ls_db-is_active <> 'X'.

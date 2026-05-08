@@ -1,14 +1,3 @@
-//projection implementation in class zbp_c_biz_obj unique;
-//strict ( 2 );
-//
-//define behavior for Z_C_BIZ_OBJ //alias <alias_name>
-//{
-//  use create;
-//  use update;
-//  use delete;
-//
-//}
-
 projection;
 strict ( 2 );
 
@@ -19,7 +8,6 @@ define behavior for Z_C_BIZ_OBJ alias BizObj
   use delete;
 
   use association _Links;
-//  use action link_attachment;
 }
 
 define behavior for Z_C_BO_ATT_LK alias AttBizLk

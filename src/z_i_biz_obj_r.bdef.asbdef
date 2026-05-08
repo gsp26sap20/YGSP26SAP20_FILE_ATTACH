@@ -11,13 +11,6 @@ authorization master ( instance )
 
   association _Links;
 
-  //  action ( features : instance ) link_attachment
-  //    parameter ZATT_LINK_PARAM
-  //    result [1] $self;
-//  action ( features : instance ) link_attachment
-//    parameter Z_A_LINK_ATT_P
-//    result [1] $self;
-
 }
 
 define behavior for Z_I_BO_ATT_LK alias AttBizLk

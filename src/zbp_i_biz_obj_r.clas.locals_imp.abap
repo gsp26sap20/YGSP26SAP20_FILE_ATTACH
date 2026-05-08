@@ -142,6 +142,7 @@ CLASS lhc_BizObj IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD update.
+    DATA ls_bo_upd TYPE zsap20_biz_obj.
 
     IF entities IS INITIAL.
       RETURN.
@@ -149,10 +150,10 @@ CLASS lhc_BizObj IMPLEMENTATION.
 
     LOOP AT entities INTO DATA(ls_entity).
       "Check exist
-      SELECT SINGLE bo_id
+      SELECT SINGLE *
        FROM zsap20_biz_obj
        WHERE bo_id = @ls_entity-BoId
-       INTO @DATA(lv_exist).
+       INTO @ls_bo_upd.
       IF sy-subrc <> 0.
         APPEND VALUE #( %tky = ls_entity-%tky ) TO failed-bizobj.
         APPEND VALUE #(
@@ -165,29 +166,16 @@ CLASS lhc_BizObj IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      "Update (just update field business + audit)
-      UPDATE zsap20_biz_obj
-        SET
-          bo_type  = @ls_entity-BoType,
-          bo_title = @ls_entity-BoTitle,
-          status   = @ls_entity-Status,
-          aedat    = @sy-datum,
-          aezet    = @sy-uzeit,
-          aenam    = @sy-uname
-        WHERE bo_id = @ls_entity-BoId.
+      "Update fields into temp variable
+      ls_bo_upd-bo_type  = ls_entity-BoType.
+      ls_bo_upd-bo_title = ls_entity-BoTitle.
+      ls_bo_upd-status   = ls_entity-Status.
+      ls_bo_upd-aedat    = sy-datum.
+      ls_bo_upd-aezet    = sy-uzeit.
+      ls_bo_upd-aenam    = sy-uname.
 
-      IF sy-subrc <> 0.
-        APPEND VALUE #( %tky = ls_entity-%tky ) TO failed-bizobj.
-        APPEND VALUE #(
-          %tky = ls_entity-%tky
-          %msg = new_message(
-                   id       = 'YGSP26SAP20_MSG'
-                   number   = '009'
-                   severity = if_abap_behv_message=>severity-error
-                   v1       = 'Update Business Object' )
-        ) TO reported-bizobj.
-        CONTINUE.
-      ENDIF.
+      "Push to buffer
+      APPEND ls_bo_upd TO zbp_i_biz_obj_r=>gt_bo_update.
 
       APPEND VALUE #(
         %tky = ls_entity-%tky
@@ -494,32 +482,28 @@ CLASS lhc_AttBizLk IMPLEMENTATION.
       ls_link_db-ernam   = sy-uname.
 
       APPEND ls_link_db TO zbp_i_biz_obj_r=>gt_link_buffer.
-      " 8. Update last modified for BO
-      UPDATE zsap20_biz_obj
-        SET aedat = @sy-datum,
-            aezet = @sy-uzeit,
-            aenam = @sy-uname
-        WHERE bo_id = @ls_entity-BoId.
+      " 8. Push BO and Attachment ID to touch buffer for Timestamp update
+      APPEND ls_entity-BoId TO zbp_i_biz_obj_r=>gt_bo_touch.
+      APPEND ls_entity-FileId TO zbp_i_biz_obj_r=>gt_file_touch.
 
-      " 9. Update last modified for Attachment
-      UPDATE zsap20_file_mgmt
-        SET aedat = @sy-datum,
-            aezet = @sy-uzeit,
-            aenam = @sy-uname
-        WHERE file_id = @ls_entity-FileId.
+      " help FE regex
+      DATA(lv_file_marker) = |$\\{ to_lower( CONV string( ls_entity-FileId ) ) }$\\|.
+      DATA(lv_bo_marker)   = |\\${ to_lower( CONV string( ls_entity-BoId ) ) }\\$|.
 
-      " 10. Write audit for Attachment
+      MESSAGE i072(ygsp26sap20_msg) WITH lv_file_marker lv_bo_marker INTO DATA(lv_audit_note_cre).
+
+      " 9. Write audit for Attachment
       APPEND VALUE zsap20_att_audit(
         uname   = sy-uname
         file_id = ls_entity-FileId
         action  = zcl_attach_config=>c_audit_link_to_bo
-        note    = |Attachment $\\{ ls_entity-FileId }$\\ linked to BO \\${ ls_entity-BoId }\\$.|
+        note    = lv_audit_note_cre
         erdat   = sy-datum
         erzet   = sy-uzeit
         ernam   = sy-uname
       ) TO zbp_i_attach_r=>gt_audit_buffer.
 
-      " 11. Map and report success
+      " 10. Map and report success
       APPEND VALUE #(
         %cid   = ls_entity-%cid
         BoId   = ls_entity-BoId
@@ -539,15 +523,21 @@ CLASS lhc_AttBizLk IMPLEMENTATION.
 
 
   METHOD delete.
+    DATA ls_link_del TYPE zsap20_bo_att_lk.
+
     IF keys IS INITIAL.
       RETURN.
     ENDIF.
 
     LOOP AT keys INTO DATA(ls_key).
 
-      DELETE FROM zsap20_bo_att_lk
-    WHERE bo_id   = @ls_key-BoId
-      AND file_id = @ls_key-FileId.
+      " Check existence before buffering delete
+      SELECT SINGLE @abap_true
+        FROM zsap20_bo_att_lk
+        WHERE bo_id   = @ls_key-BoId
+          AND file_id = @ls_key-FileId
+        INTO @DATA(lv_link_exists).
+
       IF sy-subrc <> 0.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attbizlk.
         APPEND VALUE #(
@@ -560,26 +550,26 @@ CLASS lhc_AttBizLk IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " Update last modified for BO
-      UPDATE zsap20_biz_obj
-        SET aedat = @sy-datum,
-            aezet = @sy-uzeit,
-            aenam = @sy-uname
-        WHERE bo_id = @ls_key-BoId.
+      " Push to delete buffer
+      ls_link_del-bo_id   = ls_key-BoId.
+      ls_link_del-file_id = ls_key-FileId.
+      APPEND ls_link_del TO zbp_i_biz_obj_r=>gt_link_delete.
 
-      " Update last modified for Attachment
-      UPDATE zsap20_file_mgmt
-        SET aedat = @sy-datum,
-            aezet = @sy-uzeit,
-            aenam = @sy-uname
-        WHERE file_id = @ls_key-FileId.
+      " Push BO and Attachment ID to touch buffer for Timestamp update
+      APPEND ls_key-BoId TO zbp_i_biz_obj_r=>gt_bo_touch.
+      APPEND ls_key-FileId TO zbp_i_biz_obj_r=>gt_file_touch.
+
+      DATA(lv_file_marker_del) = |$\\{ to_lower( CONV string( ls_key-FileId ) ) }$\\|.
+      DATA(lv_bo_marker_del)   = |\\${ to_lower( CONV string( ls_key-BoId ) ) }\\$|.
+
+      MESSAGE i073(ygsp26sap20_msg) WITH lv_file_marker_del lv_bo_marker_del INTO DATA(lv_audit_note_del).
 
       " Audit for unlink
       APPEND VALUE zsap20_att_audit(
         uname   = sy-uname
         file_id = ls_key-FileId
         action  = zcl_attach_config=>c_audit_unlink_bo
-        note    = |Attachment unlinked from BO \\${ ls_key-BoId }\\$.|
+        note    = lv_audit_note_del
         erdat   = sy-datum
         erzet   = sy-uzeit
         ernam   = sy-uname

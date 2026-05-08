@@ -239,6 +239,42 @@
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>072</MSGNR>
+     <TEXT>Attachment &amp;1 linked to BO &amp;2.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>073</MSGNR>
+     <TEXT>Attachment &amp;1 unlinked from BO &amp;2.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>074</MSGNR>
+     <TEXT>Attachment created successfully.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>075</MSGNR>
+     <TEXT>Title changed from &quot;&amp;1&quot; to &quot;&amp;2&quot;.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>076</MSGNR>
+     <TEXT>Edit lock changed from &quot;&amp;1&quot; to &quot;&amp;2&quot;.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
+     <MSGNR>077</MSGNR>
+     <TEXT>Current version changed from &amp;1 to &amp;2.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>YGSP26SAP20_MSG</ARBGB>
      <MSGNR>091</MSGNR>
      <TEXT>Business Object does not exist or is locked.</TEXT>
     </T100>

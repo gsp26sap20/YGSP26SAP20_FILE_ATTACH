@@ -310,12 +310,14 @@ CLASS lhc_Attach IMPLEMENTATION.
 
       APPEND ls_mgmt TO zbp_i_attach_r=>gt_attach_buffer.
 
+      MESSAGE i008(YGSP26SAP20_MSG) WITH 'Attachment creation' INTO DATA(lv_audit_note_cre).
+
       "Audit buffer
       APPEND VALUE zsap20_att_audit(
         uname  = sy-uname
         file_id = lv_file_id
         action = zcl_attach_config=>c_audit_create
-        note   = |Created attachment. Title="{ ls_ent-Title }".|
+        note   = lv_audit_note_cre
         erdat  = sy-datum
         erzet  = sy-uzeit
         ernam  = sy-uname
@@ -387,32 +389,60 @@ CLASS lhc_Attach IMPLEMENTATION.
       CLEAR ls_mgmt_upd.
       READ TABLE zbp_i_attach_r=>gt_attach_update_buffer INTO ls_mgmt_upd WITH KEY file_id = ls_entity-FileId.
       IF sy-subrc <> 0.
-        SELECT SINGLE * FROM zsap20_file_mgmt INTO @ls_mgmt_upd WHERE file_id = @ls_entity-FileId.
+        SELECT SINGLE
+       mandt,
+       file_id,
+       title,
+       current_version,
+       is_active,
+       erdat,
+       erzet,
+       ernam,
+       aedat,
+       aezet,
+       aenam,
+       edit_lock
+       FROM zsap20_file_mgmt
+       INTO @ls_mgmt_upd
+       WHERE file_id = @ls_entity-FileId.
       ENDIF.
 
       " update title
-      IF ls_entity-Title IS NOT INITIAL AND ls_entity-Title <> lv_title_db.
+      IF ls_entity-%control-Title = if_abap_behv=>mk-on.
+
         TRY.
             zcl_attach_validation=>check_title( CONV string( ls_entity-Title ) ).
           CATCH zcx_attach_validation INTO DATA(lx_title).
             APPEND VALUE #( %tky = ls_entity-%tky ) TO failed-attach.
-            APPEND VALUE #( %tky = ls_entity-%tky
-                            %msg = new_message_with_text( severity = if_abap_behv_message=>severity-error text = lx_title->get_text( ) )
-                            %element-Title = if_abap_behv=>mk-on ) TO reported-attach.
+            APPEND VALUE #(
+              %tky          = ls_entity-%tky
+              %msg          = new_message_with_text(
+                                severity = if_abap_behv_message=>severity-error
+                                text     = lx_title->get_text( ) )
+              %element-Title = if_abap_behv=>mk-on
+            ) TO reported-attach.
             CONTINUE.
         ENDTRY.
 
-        " update data in temp var
-        ls_mgmt_upd-title = ls_entity-Title.
-        ls_mgmt_upd-aedat = sy-datum.
-        ls_mgmt_upd-aezet = sy-uzeit.
-        ls_mgmt_upd-aenam = sy-uname.
+        IF ls_entity-Title <> lv_title_db.
+          ls_mgmt_upd-title = ls_entity-Title.
+          ls_mgmt_upd-aedat = sy-datum.
+          ls_mgmt_upd-aezet = sy-uzeit.
+          ls_mgmt_upd-aenam = sy-uname.
 
-        APPEND VALUE zsap20_att_audit(
-          uname = sy-uname file_id = ls_entity-FileId action = zcl_attach_config=>c_audit_update_title
-          note = |Title changed from "{ lv_title_db }" to "{ ls_entity-Title }"|
-          erdat = sy-datum erzet = sy-uzeit ernam = sy-uname
-        ) TO zbp_i_attach_r=>gt_audit_buffer.
+          MESSAGE i075(YGSP26SAP20_MSG) WITH lv_title_db ls_entity-Title INTO DATA(lv_audit_note_title).
+
+          APPEND VALUE zsap20_att_audit(
+            uname  = sy-uname
+            file_id = ls_entity-FileId
+            action = zcl_attach_config=>c_audit_update_title
+            note   = lv_audit_note_title
+            erdat  = sy-datum
+            erzet  = sy-uzeit
+            ernam  = sy-uname
+          ) TO zbp_i_attach_r=>gt_audit_buffer.
+        ENDIF.
+
       ENDIF.
 
       " update edit lock
@@ -433,11 +463,13 @@ CLASS lhc_Attach IMPLEMENTATION.
         ls_mgmt_upd-aezet     = sy-uzeit.
         ls_mgmt_upd-aenam     = sy-uname.
 
+        MESSAGE i076(YGSP26SAP20_MSG) WITH lv_old_lock_text lv_new_lock_text INTO DATA(lv_audit_note_lock).
+
         APPEND VALUE zsap20_att_audit(
           uname   = sy-uname
           file_id = ls_entity-FileId
           action  = zcl_attach_config=>c_audit_update_title
-          note    = |Edit lock changed from "{ lv_old_lock_text }" to "{ lv_new_lock_text }"|
+          note    = lv_audit_note_lock
           erdat   = sy-datum
           erzet   = sy-uzeit
           ernam   = sy-uname
@@ -478,10 +510,16 @@ CLASS lhc_Attach IMPLEMENTATION.
         ls_mgmt_upd-aezet = sy-uzeit.
         ls_mgmt_upd-aenam = sy-uname.
 
+        MESSAGE i077(YGSP26SAP20_MSG) WITH lv_ver_db ls_entity-CurrentVersion INTO DATA(lv_audit_note_ver).
+
         APPEND VALUE zsap20_att_audit(
-          uname = sy-uname file_id = ls_entity-FileId action = zcl_attach_config=>c_audit_set_current_version
-          note = |Current version changed from { lv_ver_db } to { ls_entity-CurrentVersion }|
-          erdat = sy-datum erzet = sy-uzeit ernam = sy-uname
+          uname = sy-uname
+          file_id = ls_entity-FileId
+          action = zcl_attach_config=>c_audit_set_current_version
+          note = lv_audit_note_ver
+          erdat = sy-datum
+          erzet = sy-uzeit
+          ernam = sy-uname
         ) TO zbp_i_attach_r=>gt_audit_buffer.
       ENDIF.
 
@@ -518,12 +556,12 @@ CLASS lhc_Attach IMPLEMENTATION.
       IF can_delete_attach( ls_key-FileId ) <> abap_true.
         APPEND VALUE #( %tky = ls_key-%tky ) TO failed-attach.
         APPEND VALUE #(
-  %tky = ls_key-%tky
-  %msg = new_message(
+           %tky = ls_key-%tky
+           %msg = new_message(
            id       = 'YGSP26SAP20_MSG'
            number   = '067'
            severity = if_abap_behv_message=>severity-error )
-) TO reported-attach.
+          ) TO reported-attach.
         CONTINUE.
       ENDIF.
 
@@ -538,7 +576,22 @@ CLASS lhc_Attach IMPLEMENTATION.
       " edit is_active flag & push to Buffer
       READ TABLE zbp_i_attach_r=>gt_attach_update_buffer INTO ls_mgmt_del WITH KEY file_id = ls_key-FileId.
       IF sy-subrc <> 0.
-        SELECT SINGLE * FROM zsap20_file_mgmt INTO @ls_mgmt_del WHERE file_id = @ls_key-FileId.
+        SELECT SINGLE
+       mandt,
+       file_id,
+       title,
+       current_version,
+       is_active,
+       erdat,
+       erzet,
+       ernam,
+       aedat,
+       aezet,
+       aenam,
+       edit_lock
+       FROM zsap20_file_mgmt
+       INTO @ls_mgmt_del
+       WHERE file_id = @ls_key-FileId.
       ENDIF.
 
       IF ls_mgmt_del IS NOT INITIAL AND ls_mgmt_del-is_active = abap_true.
@@ -550,9 +603,11 @@ CLASS lhc_Attach IMPLEMENTATION.
         DELETE zbp_i_attach_r=>gt_attach_update_buffer WHERE file_id = ls_key-FileId.
         APPEND ls_mgmt_del TO zbp_i_attach_r=>gt_attach_update_buffer.
 
+        MESSAGE i008(ygsp26sap20_msg) WITH 'Soft delete' INTO DATA(lv_audit_note_del).
+
         APPEND VALUE zsap20_att_audit(
           uname = sy-uname file_id = ls_key-FileId action = zcl_attach_config=>c_audit_delete
-          note = |Soft delete attachment $\\{ ls_key-FileId }$\\ |
+          note  = lv_audit_note_del
           erdat = sy-datum erzet = sy-uzeit ernam = sy-uname
         ) TO zbp_i_attach_r=>gt_audit_buffer.
       ENDIF.
@@ -620,7 +675,22 @@ CLASS lhc_Attach IMPLEMENTATION.
       CLEAR ls_mgmt_rea.
       READ TABLE zbp_i_attach_r=>gt_attach_update_buffer INTO ls_mgmt_rea WITH KEY file_id = ls_key-FileId.
       IF sy-subrc <> 0.
-        SELECT SINGLE * FROM zsap20_file_mgmt INTO @ls_mgmt_rea WHERE file_id = @ls_key-FileId.
+        SELECT SINGLE
+       mandt,
+       file_id,
+       title,
+       current_version,
+       is_active,
+       erdat,
+       erzet,
+       ernam,
+       aedat,
+       aezet,
+       aenam,
+       edit_lock
+       FROM zsap20_file_mgmt
+       INTO @ls_mgmt_rea
+       WHERE file_id = @ls_key-FileId.
       ENDIF.
 
       IF ls_mgmt_rea IS NOT INITIAL.
@@ -632,9 +702,11 @@ CLASS lhc_Attach IMPLEMENTATION.
         DELETE zbp_i_attach_r=>gt_attach_update_buffer WHERE file_id = ls_key-FileId.
         APPEND ls_mgmt_rea TO zbp_i_attach_r=>gt_attach_update_buffer.
 
+        MESSAGE i008(YGSP26SAP20_MSG) WITH 'Attachment reactivation' INTO DATA(lv_audit_note_rea).
+
         APPEND VALUE zsap20_att_audit(
           uname = sy-uname file_id = ls_key-FileId action = zcl_attach_config=>c_audit_reactivate
-          note = |Attachment Reactivated.|
+          note = lv_audit_note_rea
           erdat = sy-datum erzet = sy-uzeit ernam = sy-uname
         ) TO zbp_i_attach_r=>gt_audit_buffer.
 
@@ -1024,11 +1096,23 @@ CLASS lhc_Versions IMPLEMENTATION.
 
       IF sy-subrc <> 0.
 
-        SELECT SINGLE *
-          FROM zsap20_file_mgmt
-          INTO @DATA(ls_attach_db)
-          WHERE file_id   = @ls_ent-FileId
-            AND is_active = @abap_true.
+        SELECT SINGLE
+       mandt,
+       file_id,
+       title,
+       current_version,
+       is_active,
+       erdat,
+       erzet,
+       ernam,
+       aedat,
+       aezet,
+       aenam,
+       edit_lock
+       FROM zsap20_file_mgmt
+       INTO @DATA(ls_attach_db)
+       WHERE file_id   = @ls_ent-FileId
+       AND is_active = @abap_true.
 
         IF sy-subrc = 0.
           APPEND ls_attach_db TO zbp_i_attach_r=>gt_attach_update_buffer.
@@ -1282,12 +1366,14 @@ CLASS lhc_Versions IMPLEMENTATION.
         <ls_attach>-aenam           = sy-uname.
       ENDIF.
 
+      MESSAGE i008(YGSP26SAP20_MSG) WITH 'Version creation' INTO DATA(lv_audit_note_ver).
+
 *   15. Audit buffer
       APPEND VALUE zsap20_att_audit(
         uname   = sy-uname
         file_id = ls_ent-FileId
         action  = zcl_attach_config=>c_audit_create_version
-        note    = |Created version { lv_next_ver }.|
+        note    = lv_audit_note_ver
         erdat   = sy-datum
         erzet   = sy-uzeit
         ernam   = sy-uname
@@ -1436,10 +1522,10 @@ CLASS lhc_Versions IMPLEMENTATION.
          aezet,
          aenam,
          edit_lock
- FROM zsap20_file_mgmt
- INTO TABLE @lt_attach FOR ALL ENTRIES IN @lt_fileid
- WHERE file_id      = @lt_fileid-table_line
- AND   is_active    = @abap_true.
+    FROM zsap20_file_mgmt
+    INTO TABLE @lt_attach FOR ALL ENTRIES IN @lt_fileid
+    WHERE file_id      = @lt_fileid-table_line
+    AND   is_active    = @abap_true.
 
     IF lt_attach IS INITIAL.
       RETURN.

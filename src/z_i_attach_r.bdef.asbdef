@@ -15,37 +15,8 @@ authorization master ( global, instance )
   association _Links;
 
 
-//  action ( features : instance ) download_version
-//    parameter ZATT_DOWNLOAD_PARAM
-//    result [1] Z_I_ATTACH_DOWNLOAD;
-
-  //  action ( features : instance ) view_version result [1] $self;
-  //
-  //  action ( features : instance ) rollback_version
-  //    parameter ZATT_ROLLBACK_PARAM
-  //    result [1] $self;
-
-//  action ( features : instance ) Deactivate
-//    result [1] $self;
-
   action ( features : instance ) Reactivate
     result [1] $self;
-
-
-  //  action ( features : instance ) upload_new_version
-  //    parameter ZATT_UPLOAD_PARAM
-  //    result [1] $self;
-
-  //  action ( features : instance ) link_to_bo
-  //    parameter ZATT_LINK_PARAM
-  //    result [1] $self;
-    //  action ( features : instance ) LinkToBO
-    //    parameter Z_A_LINK_BO_P
-    //    result [1] $self;
-
-  //  action ( features : instance ) upload_att_ver
-  //    parameter ZATT_UPLOAD_PARAM
-  //    result [1] $self;
 
 }
 

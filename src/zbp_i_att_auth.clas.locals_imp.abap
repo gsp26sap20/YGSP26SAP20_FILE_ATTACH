@@ -136,7 +136,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
                                id       = 'YGSP26SAP20_MSG'
                                number   = '122'
                                severity = if_abap_behv_message=>severity-error
-                               v1       = ( ls_create-Uname ) )
+                               v1       = CONV symsgv( ls_create-Uname ) )
         ) TO reported-auth.
         CONTINUE.
       ENDIF.
@@ -218,7 +218,7 @@ CLASS lhc_Z_I_ATT_AUTH IMPLEMENTATION.
                                 id       = 'YGSP26SAP20_MSG'
                                 number   = '123'
                                 severity = if_abap_behv_message=>severity-error
-                                v1       = ( ls_delete-Uname ) )
+                                v1       = CONV symsgv( ls_delete-Uname ) )
         ) TO reported-auth.
         CONTINUE.
       ENDIF.

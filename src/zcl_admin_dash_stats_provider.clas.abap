@@ -364,9 +364,9 @@ CLASS zcl_admin_dash_stats_provider IMPLEMENTATION.
     SELECT COUNT( * )
       FROM zsap20_file_mgmt AS f
       WHERE NOT EXISTS (
-        SELECT *
-          FROM zsap20_bo_att_lk AS l
-          WHERE l~file_id = f~file_id )
+        SELECT l~file_id
+        FROM zsap20_bo_att_lk AS l
+        WHERE l~file_id = f~file_id )
       INTO @rv_count.
   ENDMETHOD.
 
@@ -375,10 +375,13 @@ CLASS zcl_admin_dash_stats_provider IMPLEMENTATION.
     SELECT COUNT( * )
       FROM zsap20_biz_obj AS b
       WHERE NOT EXISTS (
-        SELECT *
-          FROM zsap20_bo_att_lk AS l
-          WHERE l~bo_id = b~bo_id )
+      SELECT l~bo_id
+        FROM zsap20_bo_att_lk AS l
+        WHERE l~bo_id = b~bo_id )
       INTO @rv_count.
   ENDMETHOD.
 
 ENDCLASS.
+
+
+

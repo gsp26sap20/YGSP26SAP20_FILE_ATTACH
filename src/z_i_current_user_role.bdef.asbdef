@@ -2,9 +2,7 @@ unmanaged implementation in class zbp_i_current_user_role unique;
 strict ( 2 );
 
 define behavior for Z_I_CURRENT_USER_ROLE alias CurrentUserRole
-//late numbering
 lock master
 authorization master ( instance )
-//etag master <field_name>
 {
 }
